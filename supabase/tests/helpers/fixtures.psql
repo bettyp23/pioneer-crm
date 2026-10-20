@@ -1,0 +1,65 @@
+-- Shared pgTAP fixtures for Pioneer OS database tests.
+-- Included by each *.test.sql via `\ir helpers/fixtures.psql` inside the test transaction,
+-- so everything here is rolled back after each file. Synthetic data only.
+
+create extension if not exists pgtap with schema extensions;
+
+-- Switch the session to an API user. Call as postgres (use `reset role` first).
+create function pg_temp.as_user(uid uuid, aal text default 'aal2')
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid, 'role', 'authenticated', 'aal', aal)::text,
+    true
+  );
+  set local role authenticated;
+end;
+$$;
+
+create function pg_temp.as_anon()
+returns void
+language plpgsql
+as $$
+begin
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  set local role anon;
+end;
+$$;
+
+-- Fixture: two workspaces and one user per role.
+--   ws1 = 'a0000000-…-01'  owner o1, admin a1, member m1, viewer v1, suspended admin s1
+--   ws2 = 'a0000000-…-02'  owner x1 (outsider to ws1)
+do $$
+declare
+  u record;
+begin
+  for u in
+    select * from (values
+      ('b0000000-0000-4000-8000-0000000000a1'::uuid, 'o1@example.test'),
+      ('b0000000-0000-4000-8000-0000000000a2'::uuid, 'a1@example.test'),
+      ('b0000000-0000-4000-8000-0000000000a3'::uuid, 'm1@example.test'),
+      ('b0000000-0000-4000-8000-0000000000a4'::uuid, 'v1@example.test'),
+      ('b0000000-0000-4000-8000-0000000000a5'::uuid, 's1@example.test'),
+      ('b0000000-0000-4000-8000-0000000000b1'::uuid, 'x1@example.test')
+    ) as t(id, email)
+  loop
+    insert into auth.users (id, email, aud, role) values (u.id, u.email, 'authenticated', 'authenticated');
+    insert into public.profiles (user_id, display_name) values (u.id, split_part(u.email, '@', 1));
+  end loop;
+
+  insert into public.workspaces (id, name, slug) values
+    ('a0000000-0000-4000-8000-000000000001', 'Test Workspace One', 'test-one'),
+    ('a0000000-0000-4000-8000-000000000002', 'Test Workspace Two', 'test-two');
+
+  insert into public.workspace_members (workspace_id, user_id, role, status) values
+    ('a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-0000000000a1', 'owner', 'active'),
+    ('a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-0000000000a2', 'admin', 'active'),
+    ('a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-0000000000a3', 'member', 'active'),
+    ('a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-0000000000a4', 'viewer', 'active'),
+    ('a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-0000000000a5', 'admin', 'suspended'),
+    ('a0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-0000000000b1', 'owner', 'active');
+end;
+$$;
