@@ -1,0 +1,28 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoginForm } from "@/features/auth/components/login-form";
+import { getClaims } from "@/server/auth/session";
+
+export const metadata: Metadata = { title: "Sign in" };
+
+export default async function LoginPage() {
+  const claims = await getClaims();
+  if (claims?.aal === "aal2") redirect("/dashboard");
+  if (claims) redirect("/login/mfa");
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <h1>Sign in</h1>
+        </CardTitle>
+        <CardDescription>Accounts are created by the workspace owner.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <LoginForm />
+      </CardContent>
+    </Card>
+  );
+}
