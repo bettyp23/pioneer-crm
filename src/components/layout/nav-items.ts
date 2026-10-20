@@ -22,6 +22,7 @@ import {
 
 // Sidebar navigation for every module in the screen map (docs/architecture.md §8).
 // Modules not built yet show their milestone instead of linking to a broken page.
+const CURRENT_MILESTONE = 2;
 export type NavItem = {
   label: string;
   href: string;
@@ -37,7 +38,7 @@ const item = (label: string, href: string, icon: LucideIcon, milestone: number):
   href,
   icon,
   milestone,
-  available: milestone <= 1,
+  available: milestone <= CURRENT_MILESTONE,
 });
 
 export const NAV_SECTIONS: NavSection[] = [
@@ -86,6 +87,12 @@ export const NAV_SECTIONS: NavSection[] = [
 export const SETTINGS_TABS = [
   { label: "Workspace", href: "/settings/workspace", icon: ClipboardList, permission: null },
   { label: "Members", href: "/settings/members", icon: Users, permission: null },
+  {
+    label: "Pipeline",
+    href: "/settings/pipeline",
+    icon: ListChecks,
+    permission: "pipeline.configure",
+  },
   { label: "Security", href: "/settings/security", icon: ListChecks, permission: null },
   { label: "Audit log", href: "/settings/audit", icon: ListChecks, permission: "audit.read" },
 ] as const;
