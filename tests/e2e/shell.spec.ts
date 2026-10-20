@@ -12,10 +12,10 @@ test.describe("as owner", () => {
     const nav = page.locator("[data-sidebar=content]");
     await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Settings" })).toBeVisible();
-    for (const name of ["Clients", "Contacts", "Pipeline", "Follow-ups"]) {
+    for (const name of ["Clients", "Contacts", "Pipeline", "Follow-ups", "Blueprints"]) {
       await expect(nav.getByRole("link", { name })).toBeVisible();
     }
-    for (const name of ["Blueprints", "Projects", "Invoices", "Work queue"]) {
+    for (const name of ["Projects", "Approvals", "Invoices", "Work queue"]) {
       await expect(nav.getByRole("button", { name })).toBeDisabled();
       await expect(nav.getByRole("link", { name })).toHaveCount(0);
     }

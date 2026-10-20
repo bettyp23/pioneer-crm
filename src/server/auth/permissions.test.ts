@@ -8,6 +8,7 @@ const EXPECTED: Record<Permission, Role[]> = {
   "records.read": ["owner", "admin", "member", "viewer"],
   "records.write": ["owner", "admin", "member"],
   "pipeline.configure": ["owner", "admin"],
+  "catalog.manage": ["owner", "admin"],
   "blueprints.publish": ["owner", "admin"],
   "projects.generate": ["owner", "admin"],
   "approvals.decide_internal": ["owner", "admin"],
