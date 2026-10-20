@@ -1,7 +1,8 @@
 # Milestone 1 — Implementation Plan
 
 Scope: repository, documentation, authentication, workspace model, database migrations,
-protected dashboard shell. Status: **Awaiting approval** · Last updated: 2026-10-19
+protected dashboard shell. Status: **Implemented — awaiting owner review** (approved to start
+2026-10-20) · Last updated: 2026-10-20
 
 Prerequisites: decisions D-1, D-11, D-12 accepted 2026-10-19 (see [decisions.md](decisions.md)); Docker + Supabase CLI installed locally.
 D-4/D-5/D-14 can wait — M1 runs entirely on the local Supabase stack.
@@ -99,6 +100,9 @@ production deployment, Google Drive or Grok integration.
 
 ## 5. Acceptance criteria and evidence
 
+Evidence for each criterion is listed in the PR description (§7 below summarizes
+deviations from this plan).
+
 | # | Criterion | Evidence |
 |---|---|---|
 | A1 | App builds, lints and typechecks with pinned versions | CI log |
@@ -112,3 +116,25 @@ production deployment, Google Drive or Grok integration.
 | A9 | Security headers present | Playwright assertion |
 | A10 | No secrets committed; `.env.example` complete | Repo review |
 | A11 | Docs updated (README, runbooks, schema as-built, decisions) | PR diff |
+
+## 6. As-built notes (2026-10-20)
+
+Deviations from the plan above, each verified against the bundled Next.js 16.4 docs or the
+installed library:
+
+- **Branch base:** `feat/m1-foundation` was branched from `docs/m0-architecture-and-plan`
+  (the docs PR is not merged yet), so this PR also contains the M0 docs commits until that
+  PR is merged.
+- **CSP lives in `src/proxy.ts`**, not `next.config.ts`: a per-request nonce requires it.
+  Static headers (HSTS, nosniff, referrer, frame, permissions, robots) are in `next.config.ts`.
+- **Cache Components off** (decisions.md D-18); root layout calls `connection()`.
+- **shadcn `form` → `field`:** current shadcn replaced the `form` component with `field`;
+  `input-otp`, `badge`, `table`, `alert`, `separator`, `tooltip`, `skeleton` were added too.
+- **`@hookform/resolvers` 5.9.1**, not 6.0.0 (published the day before, with peer conflicts).
+- **Permission denials on pages render 404** (`notFound()`); `forbidden()` is still
+  experimental in Next 16.4.
+- **`[auth.email] enable_signup` stays `true`** — setting it to `false` disables email login
+  entirely; sign-up is blocked by `[auth] enable_signup = false` (verified by an E2E test).
+- **Extra seed user** `enroll@example.test` (member, no TOTP) exercises the enrollment flow.
+- **`/no-access`** page for signed-in users without an active membership.
+- **TypeScript 5.9.3** (TypeScript 7 is out but `create-next-app` 16.4 targets 5.x).
