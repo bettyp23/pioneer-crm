@@ -7,12 +7,12 @@ Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless y
 
 | ID | Decision | Recommendation | Status |
 |---|---|---|---|
-| D-1 | Login method | Email + password + **required TOTP MFA**, enforced in RLS (`aal2`). Magic links are weaker for a single high-value account (email compromise = account compromise). | OPEN |
+| D-1 | Login method | Email + password + **required TOTP MFA**, enforced in RLS (`aal2`). Magic links are weaker for a single high-value account (email compromise = account compromise). | ACCEPTED 2026-10-19 |
 | D-2 | Lead vs client model | A lead is an *opportunity* attached to a client record (status `prospect` until won). Avoids a lead→client conversion step and duplicate contact data. | OPEN |
 | D-4 | Environments | Local (Supabase CLI) + **separate staging Supabase project** for Vercel previews + production project. Alternative: Supabase Branching (more automation, more moving parts and cost). | OPEN |
 | D-5 | Supabase plan, region, backups | Supabase Pro (no pausing, daily backups); evaluate PITR add-on at M7. Supabase and Vercel functions in the same region (e.g., `us-east-1` / `iad1`). | OPEN |
-| D-11 | Workspace timezone | Default `America/New_York`; please confirm. | OPEN |
-| D-12 | Node.js version | Local Node is 20.14 (end-of-life since April 2026). Standardize on Node 24 LTS via `.nvmrc` and Vercel project setting. | OPEN |
+| D-11 | Workspace timezone | `America/New_York` (confirmed). | ACCEPTED 2026-10-19 |
+| D-12 | Node.js version | Local Node is 20.14 (end-of-life since April 2026). Standardize on Node 24 LTS via `.nvmrc` and Vercel project setting. | ACCEPTED 2026-10-19 |
 | D-13 | Production domain | Needed for auth redirect URLs and CSP (e.g., `os.<your-domain>`). Can be decided by M7; staging uses the Vercel URL. | OPEN |
 | D-14 | Supabase/Vercel/GitHub provisioning | M1 runs fully local. Creating the staging Supabase project and linking Vercel are infrastructure actions I will not take without your go-ahead. | OPEN |
 

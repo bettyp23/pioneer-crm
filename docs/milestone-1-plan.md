@@ -3,7 +3,7 @@
 Scope: repository, documentation, authentication, workspace model, database migrations,
 protected dashboard shell. Status: **Awaiting approval** · Last updated: 2026-10-19
 
-Prerequisites: decisions D-1, D-11, D-12 answered (see [decisions.md](decisions.md)).
+Prerequisites: decisions D-1, D-11, D-12 accepted 2026-10-19 (see [decisions.md](decisions.md)); Docker + Supabase CLI installed locally.
 D-4/D-5/D-14 can wait — M1 runs entirely on the local Supabase stack.
 
 ## 1. Branching
