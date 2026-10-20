@@ -1,6 +1,6 @@
 # Pioneer OS — MVP Schema
 
-Status: **M1–M2 as-built** (§3, §4, §9) · later sections proposed · Last updated: 2026-10-20
+Status: **M1–M3 as-built** (§3–§5, §9) · later sections proposed · Last updated: 2026-10-20
 
 This is the target schema across milestones. Each milestone migrates only its own tables.
 The SQL in `supabase/migrations/` is authoritative once it exists; this document explains
@@ -179,7 +179,22 @@ As-built differences from the table below:
 | `activities` | client_id, lead_id?, contact_id?, project_id? (FK added M4), type (`note`,`call`,`email`,`meeting`), subject, body, occurred_at | immutable after 24 h except by owner (proposal) |
 | `follow_ups` | client_id, lead_id?, contact_id?, title, due_at, status (`open`,`done`,`cancelled`), assignee_user_id, completed_at | `completed_at` set iff status=done (check) |
 
-## 5. Milestone 3 — catalog and blueprints
+## 5. Milestone 3 — catalog and blueprints (as built)
+
+Migration `20261020000500_catalog_blueprints.sql`; tests `supabase/tests/006_catalog_blueprints.test.sql`.
+As-built notes:
+
+- Owner/admin write everything in this section (RLS `admin`); everyone reads.
+- Immutability: `private.require_draft_version()` on templates/dependencies/inputs and
+  `private.guard_blueprint_version()` on versions (only `published → retired`; only drafts
+  deletable). Status, publish and hash columns have no client update grant.
+- `publish_blueprint_version` / `retire_blueprint_version` are `security definer` in
+  `private` (re-check admin + MFA) behind `security invoker` wrappers in `public`.
+  `blueprint_version_problems(version)` returns publish blockers (no tasks, cycles) for the UI.
+- Content hash: SHA-256 of a key-ordered JSON of tasks, dependencies and inputs, so identical
+  content yields identical hashes across versions.
+- Dependencies carry `(workspace_id, blueprint_version_id)` → `blueprint_versions` as well as
+  same-version FKs to both tasks.
 
 | Table | Key columns | Constraints / notes |
 |---|---|---|
