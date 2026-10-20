@@ -20,6 +20,12 @@ const CONSTRAINT_MESSAGES: Record<string, string> = {
   activities_lead_fkey: "The lead must belong to this client.",
   activities_contact_fkey: "The contact must belong to this client.",
   pipeline_stages_position_key: "Another stage already has that position.",
+  services_code_key: "Another service already uses that code.",
+  task_templates_key_key: "Another task already uses that key.",
+  input_templates_key_key: "Another input already uses that key.",
+  task_templates_approver_iff_required: "Choose who approves the task.",
+  task_template_dependencies_not_self: "A task can't depend on itself.",
+  package_services_service_fkey: "Choose a service from this workspace.",
   workspace_members_last_owner: "A workspace must keep at least one active owner.",
 };
 
@@ -27,6 +33,16 @@ export function toUserMessage(error: DbError, context: string): string {
   const text = `${error.message ?? ""} ${error.details ?? ""}`;
   for (const [constraint, message] of Object.entries(CONSTRAINT_MESSAGES)) {
     if (text.includes(constraint)) return message;
+  }
+  // Our own database functions and triggers raise messages written for users
+  // (e.g. "Dependencies form a cycle…"); built-in violations start with "new row"/"duplicate".
+  const message = error.message ?? "";
+  if (
+    (error.code === "23514" || error.code === "23505" || error.code === "P0001") &&
+    message &&
+    !/^(new row|duplicate key|null value|value too long)/.test(message)
+  ) {
+    return message;
   }
   switch (error.code) {
     case "42501":

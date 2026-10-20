@@ -22,7 +22,7 @@ import {
 
 // Sidebar navigation for every module in the screen map (docs/architecture.md §8).
 // Modules not built yet show their milestone instead of linking to a broken page.
-const CURRENT_MILESTONE = 2;
+const CURRENT_MILESTONE = 3;
 export type NavItem = {
   label: string;
   href: string;
