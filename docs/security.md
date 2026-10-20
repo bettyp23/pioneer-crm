@@ -52,6 +52,7 @@ Role matrix (initial):
 |---|:-:|:-:|:-:|:-:|
 | Read business records | ✓ | ✓ | ✓ | ✓ |
 | Create/edit clients, leads, activities, tasks | ✓ | ✓ | ✓ | |
+| Configure pipeline stages | ✓ | ✓ | | |
 | Publish/retire blueprint versions | ✓ | ✓ | | |
 | Generate projects | ✓ | ✓ | | |
 | Decide internal approvals | ✓ | ✓ | | |

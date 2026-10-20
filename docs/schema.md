@@ -1,6 +1,6 @@
 # Pioneer OS — MVP Schema
 
-Status: **M1 as-built** (§3, §9) · later sections proposed · Last updated: 2026-10-20
+Status: **M1–M2 as-built** (§3, §4, §9) · later sections proposed · Last updated: 2026-10-20
 
 This is the target schema across milestones. Each milestone migrates only its own tables.
 The SQL in `supabase/migrations/` is authoritative once it exists; this document explains
@@ -148,7 +148,27 @@ RLS (all with a restrictive `aal2` policy):
 - `bump_version()` is created in M1 but first used in M4.
 - `private.set_updated_at()`, `private.bump_version()` triggers.
 
-## 4. Milestone 2 — clients and pipeline
+## 4. Milestone 2 — clients and pipeline (as built)
+
+Migration `20261020000400_clients_pipeline.sql`; tests `supabase/tests/005_clients_pipeline.test.sql`.
+As-built differences from the table below:
+
+- `follow_ups.due_on date` (not `due_at`): FR-FU-1 asks for a due date; overdue/today are
+  computed in the workspace timezone.
+- Child references are scoped twice: `(workspace_id, client_id)` to the client, and
+  `(client_id, lead_id|contact_id)` so a lead/activity/follow-up can only reference contacts
+  and leads **of the same client**. Owners/assignees reference `workspace_members`.
+- Triggers: one primary contact per client (setting a new primary clears the old);
+  `leads.closed_at` stamped on won/lost and cleared on reopen; `lost_reason` required in a
+  lost stage (`leads_lost_reason_required`) and cleared otherwise; `follow_ups.completed_at`
+  follows status. None of these columns are client-writable.
+- `pipeline_stages`: seeded per workspace (trigger on `workspaces` insert); owner/admin may
+  rename, reorder (`public.move_pipeline_stage`, security invoker), add, and delete unused
+  open stages.
+- RLS: viewer read; member insert/update; no deletes (archive/cancel). Activities: author
+  edits within 24 h, owner any time (D-17).
+- Audit: clients (name, kind, status, archived_at), leads (incl. stage_id, lost_reason),
+  pipeline_stages, activity edits (not body text).
 
 | Table | Key columns | Constraints / notes |
 |---|---|---|
