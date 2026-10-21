@@ -8,6 +8,8 @@ import { FollowUpList } from "@/features/follow-ups/components/follow-up-list";
 import { followUpBucket } from "@/features/follow-ups/schemas";
 import { listOpenFollowUps } from "@/features/follow-ups/server/queries";
 import { listLeads, listStages } from "@/features/leads/server/queries";
+import { listPendingApprovals, listReadyTasks } from "@/features/projects/server/queries";
+import { formatIsoDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { can } from "@/server/auth/permissions";
 import { requireMember } from "@/server/auth/session";
@@ -16,18 +18,18 @@ export const metadata: Metadata = { title: "Dashboard" };
 
 // Widgets planned for the "Today" dashboard (docs/architecture.md §8) that later milestones fill.
 const UPCOMING_WIDGETS = [
-  { title: "Tasks ready to start", description: "Tasks with every blocker cleared.", milestone: 4 },
-  { title: "Pending approvals", description: "Approvals waiting on a decision.", milestone: 4 },
   { title: "Routines due", description: "Recurring operations due today.", milestone: 5 },
   { title: "High-severity issues", description: "Open high and critical issues.", milestone: 5 },
 ];
 
 export default async function DashboardPage() {
   const { member } = await requireMember();
-  const [{ followUps, today }, leads, stages] = await Promise.all([
+  const [{ followUps, today }, leads, stages, readyTasks, approvals] = await Promise.all([
     listOpenFollowUps({ scope: "mine" }),
     listLeads(),
     listStages(),
+    listReadyTasks(),
+    listPendingApprovals(),
   ]);
   const due = followUps.filter((f) => followUpBucket(f.due_on, today) !== "upcoming");
   const overdueCount = due.filter((f) => f.due_on < today).length;
@@ -81,7 +83,70 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              <h2>Tasks ready to start</h2>
+            </CardTitle>
+            <CardDescription>Every prerequisite and client input is in place.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {readyTasks.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nothing ready right now.</p>
+            ) : (
+              <ul className="divide-y text-sm">
+                {readyTasks.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between gap-2 py-2">
+                    <Link href={`/projects/${t.project?.id}`} className="hover:underline">
+                      {t.title}
+                      <span className="text-muted-foreground block text-xs">{t.project?.name}</span>
+                    </Link>
+                    <span className="text-muted-foreground text-xs">
+                      {t.due_on ? `Due ${formatIsoDate(t.due_on)}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              <h2>Pending approvals</h2>
+            </CardTitle>
+            <CardDescription>
+              {approvals.length} waiting.{" "}
+              <Link href="/approvals" className="underline underline-offset-2">
+                Approval inbox
+              </Link>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {approvals.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No approvals waiting.</p>
+            ) : (
+              <ul className="divide-y text-sm">
+                {approvals.slice(0, 6).map((a) => (
+                  <li key={a.id} className="py-2">
+                    <Link
+                      href={`/projects/${a.project?.id}?tab=approvals`}
+                      className="hover:underline"
+                    >
+                      {a.title}
+                    </Link>
+                    <span className="text-muted-foreground block text-xs">
+                      {a.project?.name} · {a.approver_type === "client" ? "client" : "internal"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {UPCOMING_WIDGETS.map((widget) => (
           <Card key={widget.title}>
             <CardHeader>
