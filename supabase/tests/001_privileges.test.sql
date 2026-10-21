@@ -59,7 +59,18 @@ select set_eq(
             ('client_input_requests', 'SELECT'),
             ('approvals', 'SELECT'),
             ('task_readiness', 'SELECT'),
-            ('project_progress', 'SELECT') $$,
+            ('project_progress', 'SELECT'),
+            ('routines', 'SELECT'),
+            ('routine_runs', 'SELECT'),
+            ('diagnostics', 'SELECT'),
+            ('issues', 'SELECT'),
+            ('invoices', 'SELECT'),
+            ('pipeline_summary', 'SELECT'),
+            ('project_health', 'SELECT'),
+            ('overdue_tasks', 'SELECT'),
+            ('routine_compliance', 'SELECT'),
+            ('open_issues_by_severity', 'SELECT'),
+            ('receivables_by_status', 'SELECT') $$,
   'authenticated has only the documented table privileges'
 );
 
