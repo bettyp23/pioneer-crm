@@ -1,6 +1,6 @@
 # Pioneer OS — MVP Schema
 
-Status: **M1–M5 as-built** (§3–§7, §9) · M6 proposed · Last updated: 2026-10-20
+Status: **M1–M6 as-built** (§3–§8, §9) · Last updated: 2026-10-20
 
 This is the target schema across milestones. Each milestone migrates only its own tables.
 The SQL in `supabase/migrations/` is authoritative once it exists; this document explains
@@ -287,7 +287,20 @@ Migration `20261020000700_operations.sql`; tests `supabase/tests/008_operations.
 Reporting views (`security_invoker = true`): `pipeline_summary`, `project_health`,
 `overdue_tasks`, `routine_compliance`, `open_issues_by_severity`, `receivables_by_status`.
 
-## 8. Milestone 6 — agent work queue
+## 8. Milestone 6 — AI Command Center + Approval Center (as built)
+
+Migration `20261021000100_ai_command_center.sql`; tests `supabase/tests/009_ai_command_center.test.sql`.
+Re-scoped by D-19 (see docs/milestone-6-plan.md). As built:
+
+| Table | Notes |
+|---|---|
+| `agents` | The eight vision roles seeded per workspace (trigger on new workspaces); `provider`, `model`, saved `instructions`, `allowed_work_types`; no credentials. Owner/admin edit. |
+| `agent_work_items` | Draft → ready → dispatched → returned → accepted/rejected (+ cancelled) via `transition_work_item`; content frozen after ready (trigger + RLS); `context_snapshot` + `sensitivity_flags` built server-side; flagged items need `override_reason`; dispatch and review owner/admin; `version` for concurrency. |
+| `proposed_actions` | Approval Center: send_email, deploy, price_quote, sign_contract, publish_content, other. No update grants; `decide_action` (owner/admin; pricing and contracts owner only), `mark_action_executed` only after approval via `private.require_approved_action` — the gate future connectors must call. |
+| `ai_budgets` | Monthly cap per provider in cents ($50 Anthropic, $50 xAI seeded); owner edits. |
+| `ai_usage` | Append-only cost ledger in micro-USD. `ai_spend_this_month` view (workspace-local month) and `private.ai_budget_allows()` for connectors. |
+
+Original M6 proposal (kept for reference):
 
 | Table | Key columns | Constraints / notes |
 |---|---|---|
