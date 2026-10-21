@@ -5,6 +5,8 @@ import { EmptyState } from "@/components/layout/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { listContactOptions } from "@/features/contacts/server/queries";
+import { ActionCard } from "@/features/agents/components/action-card";
+import { listActions } from "@/features/agents/server/queries";
 import { DecideApproval } from "@/features/projects/components/decide-approval";
 import { listPendingApprovals } from "@/features/projects/server/queries";
 import { formatDateTime } from "@/lib/format";
@@ -15,7 +17,11 @@ export const metadata: Metadata = { title: "Approvals" };
 
 export default async function ApprovalsPage() {
   const { member } = await requireMember();
-  const [approvals, contacts] = await Promise.all([listPendingApprovals(), listContactOptions()]);
+  const [approvals, contacts, aiActions] = await Promise.all([
+    listPendingApprovals(),
+    listContactOptions(),
+    listActions({ status: "pending" }),
+  ]);
   const canWrite = can(member.role, "records.write");
   const canInternal = can(member.role, "approvals.decide_internal");
 
@@ -66,6 +72,26 @@ export default async function ApprovalsPage() {
           ))}
         </ul>
       )}
+      <section className="flex flex-col gap-2">
+        <h2 className="font-medium">
+          AI actions waiting{" "}
+          <span className="text-muted-foreground font-normal">({aiActions.length})</span>
+        </h2>
+        {aiActions.length === 0 ? (
+          <EmptyState title="No AI actions waiting" />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {aiActions.map((a) => (
+              <ActionCard
+                key={a.id}
+                action={a}
+                canDecide={can(member.role, "agents.dispatch")}
+                isOwner={member.role === "owner"}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }
