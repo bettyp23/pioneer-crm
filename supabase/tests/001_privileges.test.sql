@@ -51,7 +51,15 @@ select set_eq(
             ('task_template_dependencies', 'SELECT'),
             ('task_template_dependencies', 'DELETE'),
             ('input_templates', 'SELECT'),
-            ('input_templates', 'DELETE') $$,
+            ('input_templates', 'DELETE'),
+            ('sow_documents', 'SELECT'),
+            ('projects', 'SELECT'),
+            ('project_tasks', 'SELECT'),
+            ('task_dependencies', 'SELECT'),
+            ('client_input_requests', 'SELECT'),
+            ('approvals', 'SELECT'),
+            ('task_readiness', 'SELECT'),
+            ('project_progress', 'SELECT') $$,
   'authenticated has only the documented table privileges'
 );
 
