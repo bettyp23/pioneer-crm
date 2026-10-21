@@ -20,10 +20,13 @@ test.describe("as owner", () => {
       "Blueprints",
       "Projects",
       "Approvals",
+      "Routines",
+      "Invoices",
+      "Reports",
     ]) {
       await expect(nav.getByRole("link", { name })).toBeVisible();
     }
-    for (const name of ["Routines", "Invoices", "Reports", "Work queue"]) {
+    for (const name of ["Work queue"]) {
       await expect(nav.getByRole("button", { name })).toBeDisabled();
       await expect(nav.getByRole("link", { name })).toHaveCount(0);
     }
