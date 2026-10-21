@@ -1,6 +1,6 @@
 # Pioneer OS — MVP Schema
 
-Status: **M1–M4 as-built** (§3–§6, §9) · later sections proposed · Last updated: 2026-10-20
+Status: **M1–M5 as-built** (§3–§7, §9) · M6 proposed · Last updated: 2026-10-20
 
 This is the target schema across milestones. Each milestone migrates only its own tables.
 The SQL in `supabase/migrations/` is authoritative once it exists; this document explains
@@ -258,7 +258,23 @@ todo ──► in_progress ──► in_review ──► done
 blocking inputs `accepted`/`waived`. `→ done` additionally requires an `approved` approval
 when `requires_approval`.
 
-## 7. Milestone 5 — operations
+## 7. Milestone 5 — operations (as built)
+
+Migration `20261020000700_operations.sql`; tests `supabase/tests/008_operations.test.sql`. As-built notes:
+
+- `routine_runs` are created only by `generate_routine_runs(workspace, through?)` (definer in `private`,
+  member + MFA; viewers get 0). Idempotent via `unique(routine_id, scheduled_for)`; occurrences are
+  computed from the anchor (month-end stable); generation starts at the later of the anchor and the
+  routine's creation day **in the workspace timezone**; max 400 new runs per routine per call.
+- Members close runs by updating `status/notes/evidence_url`; triggers stamp `completed_at/by` and
+  refresh `routines.next_due_on`.
+- `diagnostic_type` is free text (UI suggestions). Issues: resolution text required when
+  resolved/won't fix; `resolved_at` stamped by trigger. Diagnostics/issues/invoices scoped to the
+  client by composite FKs.
+- `invoices.external_system` enum (QuickBooks, Stripe, Wave, Xero, FreshBooks, Other) — D-9 open;
+  `paid_on` iff paid; metadata only. Added `notes`.
+- `private.workspace_today(ws)` gives each workspace's local date; all report views (and
+  `project_progress`, redefined here) use it instead of the UTC `current_date`.
 
 | Table | Key columns | Constraints / notes |
 |---|---|---|
