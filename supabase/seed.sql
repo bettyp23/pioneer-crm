@@ -220,3 +220,40 @@ begin
   perform set_config('request.jwt.claims', '', true);
 end;
 $$;
+
+-- ── M6 demo AI work (synthetic; local only) ────────────────────────────────
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  owner_id uuid := '00000000-0000-4000-8000-000000000001';
+  c uuid; agent uuid; w uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', owner_id, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+  select id into c from public.clients where workspace_id = ws and name = 'Northwind Example Bakery';
+  select id into agent from public.agents where workspace_id = ws and key = 'client_desk';
+  update public.agents set instructions = 'Synthetic example: You are Client Desk for Pioneer Digital AI. Write warm, concise client messages. Never promise prices or dates.'
+    where id = agent;
+
+  insert into public.agent_work_items (workspace_id, agent_id, client_id, work_type, title, instructions,
+    context_snapshot, sensitivity_flags, prepared_by)
+  values (ws, agent, c, 'draft_message', 'Discovery follow-up email',
+    'Draft a short follow-up after the discovery call.',
+    E'## Client\n- Name: Northwind Example Bakery\n- Type: organization\n- Status: prospect\n- Industry: Food & beverage',
+    '[]', owner_id)
+  returning id into w;
+  perform public.transition_work_item(w, 'ready', 1);
+  perform public.transition_work_item(w, 'dispatched', 2);
+  perform public.transition_work_item(w, 'returned', 3, null,
+    E'Synthetic draft:\nHi Avery, thanks for the discovery call. Next we will share a short plan for online ordering. — Pioneer Digital AI');
+
+  insert into public.proposed_actions (workspace_id, work_item_id, client_id, action_type, title, target, details, requested_by)
+  values (ws, w, c, 'send_email', 'Send discovery follow-up', 'avery@northwind.example',
+    E'Hi Avery, thanks for the discovery call. Next we will share a short plan for online ordering. — Pioneer Digital AI', owner_id);
+
+  insert into public.ai_usage (workspace_id, provider, work_item_id, cost_microusd, note, recorded_by)
+  values (ws, 'xai', w, 120000, 'Synthetic example cost', owner_id);
+
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;

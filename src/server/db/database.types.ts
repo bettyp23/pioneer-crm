@@ -81,6 +81,252 @@ export type Database = {
           },
         ];
       };
+      agent_work_items: {
+        Row: {
+          agent_id: string;
+          client_id: string | null;
+          context_options: NonNullable<Json>;
+          context_snapshot: string | null;
+          created_at: string;
+          dispatched_at: string | null;
+          dispatched_by: string | null;
+          id: string;
+          instructions: string;
+          output_text: string | null;
+          output_url: string | null;
+          override_reason: string | null;
+          prepared_by: string | null;
+          project_id: string | null;
+          returned_at: string | null;
+          review_note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          sensitivity_flags: Json | null;
+          status: Database["public"]["Enums"]["work_item_status"];
+          title: string;
+          updated_at: string;
+          version: number;
+          work_type: Database["public"]["Enums"]["agent_work_type"];
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_id: string;
+          client_id?: string | null;
+          context_options?: NonNullable<Json>;
+          context_snapshot?: string | null;
+          created_at?: string;
+          dispatched_at?: string | null;
+          dispatched_by?: string | null;
+          id?: string;
+          instructions: string;
+          output_text?: string | null;
+          output_url?: string | null;
+          override_reason?: string | null;
+          prepared_by?: string | null;
+          project_id?: string | null;
+          returned_at?: string | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          sensitivity_flags?: Json | null;
+          status?: Database["public"]["Enums"]["work_item_status"];
+          title: string;
+          updated_at?: string;
+          version?: number;
+          work_type: Database["public"]["Enums"]["agent_work_type"];
+          workspace_id: string;
+        };
+        Update: {
+          agent_id?: string;
+          client_id?: string | null;
+          context_options?: NonNullable<Json>;
+          context_snapshot?: string | null;
+          created_at?: string;
+          dispatched_at?: string | null;
+          dispatched_by?: string | null;
+          id?: string;
+          instructions?: string;
+          output_text?: string | null;
+          output_url?: string | null;
+          override_reason?: string | null;
+          prepared_by?: string | null;
+          project_id?: string | null;
+          returned_at?: string | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          sensitivity_flags?: Json | null;
+          status?: Database["public"]["Enums"]["work_item_status"];
+          title?: string;
+          updated_at?: string;
+          version?: number;
+          work_type?: Database["public"]["Enums"]["agent_work_type"];
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_work_items_agent_fkey";
+            columns: ["workspace_id", "agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "agent_work_items_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "agent_work_items_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
+      agents: {
+        Row: {
+          allowed_work_types: Database["public"]["Enums"]["agent_work_type"][];
+          created_at: string;
+          id: string;
+          instructions: string | null;
+          is_active: boolean;
+          key: string;
+          model: string | null;
+          name: string;
+          provider: Database["public"]["Enums"]["ai_provider"];
+          role_summary: string | null;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          allowed_work_types: Database["public"]["Enums"]["agent_work_type"][];
+          created_at?: string;
+          id?: string;
+          instructions?: string | null;
+          is_active?: boolean;
+          key: string;
+          model?: string | null;
+          name: string;
+          provider?: Database["public"]["Enums"]["ai_provider"];
+          role_summary?: string | null;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          allowed_work_types?: Database["public"]["Enums"]["agent_work_type"][];
+          created_at?: string;
+          id?: string;
+          instructions?: string | null;
+          is_active?: boolean;
+          key?: string;
+          model?: string | null;
+          name?: string;
+          provider?: Database["public"]["Enums"]["ai_provider"];
+          role_summary?: string | null;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agents_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ai_budgets: {
+        Row: {
+          monthly_cap_minor: number;
+          provider: Database["public"]["Enums"]["ai_provider"];
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          monthly_cap_minor: number;
+          provider: Database["public"]["Enums"]["ai_provider"];
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          monthly_cap_minor?: number;
+          provider?: Database["public"]["Enums"]["ai_provider"];
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_budgets_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ai_usage: {
+        Row: {
+          cost_microusd: number;
+          id: number;
+          input_tokens: number | null;
+          note: string | null;
+          occurred_at: string;
+          output_tokens: number | null;
+          provider: Database["public"]["Enums"]["ai_provider"];
+          recorded_by: string | null;
+          work_item_id: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cost_microusd: number;
+          id?: never;
+          input_tokens?: number | null;
+          note?: string | null;
+          occurred_at?: string;
+          output_tokens?: number | null;
+          provider: Database["public"]["Enums"]["ai_provider"];
+          recorded_by?: string | null;
+          work_item_id?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          cost_microusd?: number;
+          id?: never;
+          input_tokens?: number | null;
+          note?: string | null;
+          occurred_at?: string;
+          output_tokens?: number | null;
+          provider?: Database["public"]["Enums"]["ai_provider"];
+          recorded_by?: string | null;
+          work_item_id?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_work_item_fkey";
+            columns: ["workspace_id", "work_item_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_work_items";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "ai_usage_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       approvals: {
         Row: {
           approver_type: Database["public"]["Enums"]["approval_approver"];
@@ -1390,6 +1636,98 @@ export type Database = {
           },
         ];
       };
+      proposed_actions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["action_type"];
+          client_id: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          decision_note: string | null;
+          details: string;
+          evidence_url: string | null;
+          executed_at: string | null;
+          executed_by: string | null;
+          execution_note: string | null;
+          id: string;
+          requested_by: string | null;
+          status: Database["public"]["Enums"]["action_status"];
+          target: string | null;
+          title: string;
+          updated_at: string;
+          version: number;
+          work_item_id: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action_type: Database["public"]["Enums"]["action_type"];
+          client_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          decision_note?: string | null;
+          details: string;
+          evidence_url?: string | null;
+          executed_at?: string | null;
+          executed_by?: string | null;
+          execution_note?: string | null;
+          id?: string;
+          requested_by?: string | null;
+          status?: Database["public"]["Enums"]["action_status"];
+          target?: string | null;
+          title: string;
+          updated_at?: string;
+          version?: number;
+          work_item_id?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          action_type?: Database["public"]["Enums"]["action_type"];
+          client_id?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          decision_note?: string | null;
+          details?: string;
+          evidence_url?: string | null;
+          executed_at?: string | null;
+          executed_by?: string | null;
+          execution_note?: string | null;
+          id?: string;
+          requested_by?: string | null;
+          status?: Database["public"]["Enums"]["action_status"];
+          target?: string | null;
+          title?: string;
+          updated_at?: string;
+          version?: number;
+          work_item_id?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "proposed_actions_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "proposed_actions_work_item_fkey";
+            columns: ["workspace_id", "work_item_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_work_items";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "proposed_actions_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       routine_runs: {
         Row: {
           completed_at: string | null;
@@ -1908,6 +2246,25 @@ export type Database = {
       };
     };
     Views: {
+      ai_spend_this_month: {
+        Row: {
+          monthly_cap_minor: number | null;
+          provider: Database["public"]["Enums"]["ai_provider"] | null;
+          remaining_microusd: number | null;
+          spent_microusd: number | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "ai_budgets_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       open_issues_by_severity: {
         Row: {
           oldest_opened_at: string | null;
@@ -2082,6 +2439,15 @@ export type Database = {
         Args: { p_blueprint_id: string; p_from_version_id?: string };
         Returns: string;
       };
+      decide_action: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["action_status"];
+          p_expected_version: number;
+          p_id: string;
+          p_note?: string;
+        };
+        Returns: number;
+      };
       decide_approval: {
         Args: {
           p_approval_id: string;
@@ -2108,6 +2474,10 @@ export type Database = {
       };
       generate_routine_runs: {
         Args: { p_through?: string; p_workspace_id: string };
+        Returns: number;
+      };
+      mark_action_executed: {
+        Args: { p_expected_version: number; p_id: string; p_note?: string };
         Returns: number;
       };
       move_pipeline_stage: { Args: { direction: number; stage_id: string }; Returns: undefined };
@@ -2138,10 +2508,28 @@ export type Database = {
         };
         Returns: number;
       };
+      transition_work_item: {
+        Args: {
+          p_expected_version: number;
+          p_id: string;
+          p_output_text?: string;
+          p_output_url?: string;
+          p_override_reason?: string;
+          p_review_note?: string;
+          p_to: Database["public"]["Enums"]["work_item_status"];
+        };
+        Returns: number;
+      };
     };
     Enums: {
+      action_status: "pending" | "approved" | "rejected" | "executed" | "cancelled";
+      action_type:
+        "send_email" | "deploy" | "price_quote" | "sign_contract" | "publish_content" | "other";
       activity_type: "note" | "call" | "email" | "meeting";
       actor_type: "user" | "system" | "agent";
+      agent_work_type:
+        "research" | "draft_message" | "plan" | "code" | "qa" | "operations" | "other";
+      ai_provider: "manual" | "xai" | "anthropic" | "perplexity" | "openrouter" | "openai";
       approval_approver: "internal" | "client";
       approval_status: "pending" | "approved" | "rejected" | "withdrawn";
       approval_subject: "task" | "deliverable" | "project_phase";
@@ -2162,6 +2550,8 @@ export type Database = {
       sow_status: "draft" | "sent" | "signed" | "superseded" | "void";
       stage_kind: "open" | "won" | "lost";
       task_status: "todo" | "in_progress" | "in_review" | "on_hold" | "done" | "cancelled";
+      work_item_status:
+        "draft" | "ready" | "dispatched" | "returned" | "accepted" | "rejected" | "cancelled";
       workspace_role: "owner" | "admin" | "member" | "viewer";
     };
     CompositeTypes: {
@@ -2274,8 +2664,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      action_status: ["pending", "approved", "rejected", "executed", "cancelled"],
+      action_type: [
+        "send_email",
+        "deploy",
+        "price_quote",
+        "sign_contract",
+        "publish_content",
+        "other",
+      ],
       activity_type: ["note", "call", "email", "meeting"],
       actor_type: ["user", "system", "agent"],
+      agent_work_type: ["research", "draft_message", "plan", "code", "qa", "operations", "other"],
+      ai_provider: ["manual", "xai", "anthropic", "perplexity", "openrouter", "openai"],
       approval_approver: ["internal", "client"],
       approval_status: ["pending", "approved", "rejected", "withdrawn"],
       approval_subject: ["task", "deliverable", "project_phase"],
@@ -2296,6 +2697,15 @@ export const Constants = {
       sow_status: ["draft", "sent", "signed", "superseded", "void"],
       stage_kind: ["open", "won", "lost"],
       task_status: ["todo", "in_progress", "in_review", "on_hold", "done", "cancelled"],
+      work_item_status: [
+        "draft",
+        "ready",
+        "dispatched",
+        "returned",
+        "accepted",
+        "rejected",
+        "cancelled",
+      ],
       workspace_role: ["owner", "admin", "member", "viewer"],
     },
   },
