@@ -28,8 +28,8 @@ select results_eq(
 select results_eq(
   $$ select provider::text, monthly_cap_minor from public.ai_budgets
      where workspace_id = 'a0000000-0000-4000-8000-000000000001' order by provider::text $$,
-  $$ values ('anthropic', 5000::bigint), ('xai', 5000::bigint) $$,
-  'budgets default to $50 for xAI and Anthropic (D-21)'
+  $$ values ('anthropic', 5000::bigint), ('openrouter', 5000::bigint) $$,
+  'budgets default to $50 for Anthropic and OpenRouter (D-21, D-24)'
 );
 select ok(
   not has_table_privilege('authenticated', 'public.agents', 'DELETE'), 'agents cannot be deleted'
@@ -39,14 +39,14 @@ select ok(
 select pg_temp.as_user('b0000000-0000-4000-8000-0000000000a3');
 select lives_ok(
   $$ with x as (insert into public.agent_work_items (workspace_id, agent_id, client_id, work_type, title, instructions)
-       values ('a0000000-0000-4000-8000-000000000001', pg_temp.id('research'), 'c6000000-0000-4000-8000-000000000001',
+       values ('a0000000-0000-4000-8000-000000000001', pg_temp.id('marketing_seo'), 'c6000000-0000-4000-8000-000000000001',
                'research', 'Competitor scan', 'List three local competitors') returning id)
      insert into ids select 'w1', id from x $$,
   'member drafts a research work item'
 );
 select lives_ok(
   $$ insert into public.agent_work_items (workspace_id, agent_id, work_type, title, instructions, context_snapshot, sensitivity_flags)
-     values ('a0000000-0000-4000-8000-000000000001', pg_temp.id('research'), 'research', 'With snapshot', 'Do it',
+     values ('a0000000-0000-4000-8000-000000000001', pg_temp.id('marketing_seo'), 'research', 'With snapshot', 'Do it',
              'Client: AI Client', '[]') $$,
   'members can create a draft together with its context snapshot'
 );
@@ -79,14 +79,14 @@ select throws_ok(
 );
 select lives_ok(
   $$ with x as (insert into public.agent_work_items (workspace_id, agent_id, work_type, title, instructions)
-       values ('a0000000-0000-4000-8000-000000000001', pg_temp.id('research'), 'code', 'Wrong type', 'Write code') returning id)
+       values ('a0000000-0000-4000-8000-000000000001', pg_temp.id('marketing_seo'), 'code', 'Wrong type', 'Write code') returning id)
      insert into ids select 'w2', id from x $$,
   'a draft can name any work type'
 );
 update public.agent_work_items set context_snapshot = '', sensitivity_flags = '[]' where id = pg_temp.id('w2');
 select throws_ok(
   $$ select public.transition_work_item(pg_temp.id('w2'), 'ready', pg_temp.ver('w2')) $$,
-  '23514', 'Research Agent does not take code work', 'agents only take their allowed work types'
+  '23514', 'Marketing & SEO Agent does not take code work', 'agents only take their allowed work types'
 );
 reset role;
 
@@ -192,7 +192,7 @@ select is(
 select pg_temp.as_user('b0000000-0000-4000-8000-0000000000a3');
 select lives_ok(
   $$ insert into public.ai_usage (workspace_id, provider, work_item_id, cost_microusd, note)
-     values ('a0000000-0000-4000-8000-000000000001', 'xai', pg_temp.id('w1'), 48000000, 'Synthetic: $48') $$,
+     values ('a0000000-0000-4000-8000-000000000001', 'openrouter', pg_temp.id('w1'), 48000000, 'Synthetic: $48') $$,
   'member records usage'
 );
 select is_empty(
@@ -203,11 +203,11 @@ select throws_ok(
   $$ update public.ai_usage set cost_microusd = 0 $$, '42501', 'audit_events is append-only',
   'the cost ledger is append-only'
 );
-select ok(private.ai_budget_allows('a0000000-0000-4000-8000-000000000001', 'xai', 1000000),
+select ok(private.ai_budget_allows('a0000000-0000-4000-8000-000000000001', 'openrouter', 1000000),
   'budget allows a $1 call with $2 left');
-select ok(not private.ai_budget_allows('a0000000-0000-4000-8000-000000000001', 'xai', 3000000),
+select ok(not private.ai_budget_allows('a0000000-0000-4000-8000-000000000001', 'openrouter', 3000000),
   'budget refuses a $3 call with $2 left');
-select ok(not private.ai_budget_allows('a0000000-0000-4000-8000-000000000001', 'perplexity', 1),
+select ok(not private.ai_budget_allows('a0000000-0000-4000-8000-000000000001', 'openai', 1),
   'no budget row means no spending');
 
 select pg_temp.as_user('b0000000-0000-4000-8000-0000000000b1');

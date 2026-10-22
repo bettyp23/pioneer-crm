@@ -76,7 +76,8 @@ select set_eq(
             ('agent_work_items', 'SELECT'),
             ('proposed_actions', 'SELECT'),
             ('ai_usage', 'SELECT'),
-            ('ai_spend_this_month', 'SELECT') $$,
+            ('ai_spend_this_month', 'SELECT'),
+            ('job_attempts', 'SELECT') $$,
   'authenticated has only the documented table privileges'
 );
 
@@ -125,7 +126,7 @@ reset role;
 -- Security-definer functions pin search_path.
 select is_empty(
   $$ select p.proname from pg_proc p
-     where p.pronamespace in ('public'::regnamespace, 'private'::regnamespace)
+     where p.pronamespace in ('public'::regnamespace, 'private'::regnamespace, 'worker'::regnamespace)
        and p.prosecdef
        and not coalesce(p.proconfig, '{}') @> array['search_path=""'] $$,
   'every security definer function sets search_path to empty'
