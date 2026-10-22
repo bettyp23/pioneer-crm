@@ -105,7 +105,10 @@ Role matrix (initial):
   documents must not use "anyone with the link". URLs are validated to Google hosts.
 - Logs contain IDs and error codes, not record contents or PII.
 
-## 7. AI agents (Grok Bot and others)
+## 7. AI agents
+
+> Since M7 Grok is no longer used (D-24); the agent runtime plan is Hermes (D-23). The 3.0
+> threat model and controls are in [os3/SECURITY_AND_PRIVACY.md](os3/SECURITY_AND_PRIVACY.md).
 
 - Agents never receive Supabase credentials, API keys, DB access or a user session.
 - Work items carry a **curated context snapshot** chosen by a human — not a live query.
