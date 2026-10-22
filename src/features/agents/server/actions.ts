@@ -6,8 +6,10 @@ import { z } from "zod";
 
 import {
   agentFormSchema,
+  aiPauseSchema,
   budgetSchema,
   decideActionSchema,
+  jobCommandSchema,
   proposedActionSchema,
   usageSchema,
   workItemFormSchema,
@@ -187,6 +189,36 @@ export async function setBudget(input: unknown): Promise<ActionResult> {
     .select("provider");
   if (error) return { ok: false, error: toUserMessage(error, "ai_budget.update") };
   if (data.length === 0) return { ok: false, error: "No budget for that provider." };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// Kill switch (D-26): owner only; the database re-checks role and MFA and audits the change.
+export async function setAiPaused(input: unknown): Promise<ActionResult> {
+  const parsed = aiPauseSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const auth = await authorizeAction("agents.kill_switch");
+  if (!auth.ok) return auth;
+  const { error } = await auth.ctx.supabase.rpc("set_ai_paused", {
+    p_workspace_id: auth.ctx.member.workspaceId,
+    p_paused: parsed.data.paused,
+    p_reason: parsed.data.reason ?? undefined,
+  });
+  if (error) return { ok: false, error: toUserMessage(error, "ai.pause") };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function commandJob(input: unknown): Promise<ActionResult> {
+  const parsed = jobCommandSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const auth = await authorizeAction("jobs.manage");
+  if (!auth.ok) return auth;
+  const { error } =
+    parsed.data.command === "retry"
+      ? await auth.ctx.supabase.rpc("retry_job", { p_id: parsed.data.id })
+      : await auth.ctx.supabase.rpc("cancel_job", { p_id: parsed.data.id });
+  if (error) return { ok: false, error: toUserMessage(error, `job.${parsed.data.command}`) };
   revalidatePath("/", "layout");
   return { ok: true };
 }

@@ -31,13 +31,17 @@ export const PROVIDERS = [
   "openai",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];
+// Grok (xAI) and Perplexity are no longer part of the stack (D-24); the database still knows them
+// so historic ledger rows stay readable, but nothing new can use them.
+export const SELECTABLE_PROVIDERS = ["manual", "anthropic", "openrouter", "openai"] as const;
+export type SelectableProvider = (typeof SELECTABLE_PROVIDERS)[number];
 export const PROVIDER_LABELS: Record<Provider, string> = {
   manual: "Manual",
-  xai: "xAI (Grok)",
+  xai: "xAI (Grok) · retired",
   anthropic: "Anthropic (Claude)",
-  perplexity: "Perplexity",
+  perplexity: "Perplexity · retired",
   openrouter: "OpenRouter",
-  openai: "OpenAI",
+  openai: "OpenAI (Codex)",
 };
 
 export const WORK_STATUS_LABELS = {
@@ -75,6 +79,21 @@ export const ACTION_STATUS_LABELS = {
   executed: "Done",
   cancelled: "Cancelled",
 } as const;
+
+// Durable jobs (D-27): run by the VPS worker; people only watch, retry and cancel.
+export const JOB_STATUS_LABELS = {
+  queued: "Queued",
+  running: "Running",
+  succeeded: "Done",
+  failed: "Failed",
+  dead: "Gave up",
+  cancelled: "Cancelled",
+} as const;
+export type JobStatus = keyof typeof JOB_STATUS_LABELS;
+
+export const jobCommandSchema = z.object({ id: z.uuid(), command: z.enum(["retry", "cancel"]) });
+
+export const aiPauseSchema = z.object({ paused: z.boolean(), reason: optionalText(500) });
 
 // Context sections (D-22): business information by default; the rest opt-in and flagged.
 export const CONTEXT_SECTIONS = {
@@ -130,7 +149,7 @@ export const agentFormSchema = z.object({
   name: requiredText("a name", 120),
   role_summary: optionalText(1000),
   instructions: optionalText(20000),
-  provider: z.enum(PROVIDERS),
+  provider: z.enum(SELECTABLE_PROVIDERS),
   model: optionalText(120),
   allowed_work_types: z.array(z.enum(WORK_TYPES)).min(1, "Pick at least one kind of work"),
   is_active: z.boolean(),
@@ -159,7 +178,7 @@ export const decideActionSchema = z.object({
 });
 
 export const usageSchema = z.object({
-  provider: z.enum(PROVIDERS),
+  provider: z.enum(SELECTABLE_PROVIDERS).exclude(["manual"]),
   work_item_id: optionalUuid,
   cost: z
     .string()
@@ -170,7 +189,7 @@ export const usageSchema = z.object({
 });
 
 export const budgetSchema = z.object({
-  provider: z.enum(PROVIDERS),
+  provider: z.enum(SELECTABLE_PROVIDERS),
   cap: z
     .string()
     .trim()
@@ -178,7 +197,8 @@ export const budgetSchema = z.object({
     .transform((v) => Math.round(Number(v) * 100)),
 });
 
-// Text pasted into the agent (Grok app, Claude): its role, the task, the curated context.
+// Text handed to the agent (pasted into Claude or ChatGPT until Hermes is connected): its role,
+// the task, the curated context.
 export function buildPrompt(input: {
   agentName: string;
   agentInstructions: string | null;

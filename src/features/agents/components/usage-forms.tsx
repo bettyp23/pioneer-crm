@@ -6,10 +6,20 @@ import { toast } from "sonner";
 import { NativeSelect } from "@/components/forms/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PROVIDER_LABELS, PROVIDERS, type Provider } from "@/features/agents/schemas";
+import {
+  PROVIDER_LABELS,
+  SELECTABLE_PROVIDERS,
+  type SelectableProvider,
+} from "@/features/agents/schemas";
 import { recordUsage, setBudget } from "@/features/agents/server/actions";
 
-export function BudgetForm({ provider, capDollars }: { provider: Provider; capDollars: string }) {
+export function BudgetForm({
+  provider,
+  capDollars,
+}: {
+  provider: SelectableProvider;
+  capDollars: string;
+}) {
   const [cap, setCap] = useState(capDollars);
   const [pending, startTransition] = useTransition();
   return (
@@ -42,7 +52,7 @@ export function BudgetForm({ provider, capDollars }: { provider: Provider; capDo
 }
 
 export function UsageForm({ workItemId }: { workItemId?: string }) {
-  const [provider, setProvider] = useState<Provider>("xai");
+  const [provider, setProvider] = useState<SelectableProvider>("openrouter");
   const [cost, setCost] = useState("");
   const [note, setNote] = useState("");
   const [pending, startTransition] = useTransition();
@@ -69,10 +79,10 @@ export function UsageForm({ workItemId }: { workItemId?: string }) {
       <NativeSelect
         aria-label="Provider"
         value={provider}
-        onChange={(e) => setProvider(e.target.value as Provider)}
+        onChange={(e) => setProvider(e.target.value as SelectableProvider)}
         className="h-8 w-44 text-xs"
       >
-        {PROVIDERS.filter((p) => p !== "manual").map((p) => (
+        {SELECTABLE_PROVIDERS.filter((p) => p !== "manual").map((p) => (
           <option key={p} value={p}>
             {PROVIDER_LABELS[p]}
           </option>

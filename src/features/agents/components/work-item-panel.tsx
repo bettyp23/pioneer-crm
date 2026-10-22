@@ -91,7 +91,7 @@ export function WorkItemPanel({
             onClick={() =>
               navigator.clipboard
                 .writeText(prompt)
-                .then(() => toast.success("Prompt copied — paste it into the Grok app or Claude"))
+                .then(() => toast.success("Prompt copied — paste it into Claude or ChatGPT"))
                 .catch(() => toast.error("Couldn't copy; select the prompt text instead"))
             }
           >

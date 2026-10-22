@@ -11,13 +11,22 @@ import {
 } from "@/components/ui/table";
 import { AgentTabs } from "@/features/agents/components/agent-tabs";
 import { BudgetForm, UsageForm } from "@/features/agents/components/usage-forms";
-import { formatMicroUsd, PROVIDER_LABELS } from "@/features/agents/schemas";
+import {
+  formatMicroUsd,
+  PROVIDER_LABELS,
+  SELECTABLE_PROVIDERS,
+  type Provider,
+  type SelectableProvider,
+} from "@/features/agents/schemas";
 import { getUsageSummary } from "@/features/agents/server/queries";
 import { formatDateTime } from "@/lib/format";
 import { can } from "@/server/auth/permissions";
 import { requireMember } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "AI usage" };
+
+const isSelectable = (p: Provider): p is SelectableProvider =>
+  (SELECTABLE_PROVIDERS as readonly Provider[]).includes(p);
 
 export default async function UsagePage() {
   const { member } = await requireMember();
@@ -54,7 +63,7 @@ export default async function UsagePage() {
                     {formatMicroUsd(s.spent_microusd ?? 0)}
                   </TableCell>
                   <TableCell>
-                    {isOwner && s.provider ? (
+                    {isOwner && s.provider && isSelectable(s.provider) ? (
                       <BudgetForm
                         provider={s.provider}
                         capDollars={String((s.monthly_cap_minor ?? 0) / 100)}
@@ -91,8 +100,8 @@ export default async function UsagePage() {
         <section className="flex flex-col gap-2">
           <h2 className="font-medium">Record a cost</h2>
           <p className="text-muted-foreground text-xs">
-            For now, copy costs from your xAI or Anthropic console. Connectors will record them
-            automatically.
+            For now, copy costs from your OpenRouter, Anthropic or OpenAI console. Once Hermes is
+            connected, costs are recorded automatically.
           </p>
           <UsageForm />
         </section>
