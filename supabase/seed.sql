@@ -105,3 +105,44 @@ begin
     (ws, c3, null, 'Book intro call', current_date + 3, owner_id, owner_id);
 end;
 $$;
+
+-- ── M3 demo catalog and blueprint (synthetic; local only) ──────────────────
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  owner_id uuid := '00000000-0000-4000-8000-000000000001';
+  s1 uuid; s2 uuid; p1 uuid; bp uuid; v1 uuid; t1 uuid; t2 uuid; t3 uuid; t4 uuid;
+begin
+  insert into public.services (workspace_id, code, name, category, description)
+  values (ws, 'website-build', 'Website build', 'Web', 'Synthetic example service.') returning id into s1;
+  insert into public.services (workspace_id, code, name, category)
+  values (ws, 'ai-assistant', 'AI assistant setup', 'AI') returning id into s2;
+  insert into public.packages (workspace_id, name, description)
+  values (ws, 'Launch bundle', 'Synthetic example package.') returning id into p1;
+  insert into public.package_services (workspace_id, package_id, service_id, quantity, position) values
+    (ws, p1, s1, 1, 1), (ws, p1, s2, 1, 2);
+
+  insert into public.blueprints (workspace_id, service_id, name, description, created_by)
+  values (ws, s1, 'Website delivery', 'Synthetic example blueprint.', owner_id) returning id into bp;
+  insert into public.blueprint_versions (workspace_id, blueprint_id, version_number, created_by)
+  values (ws, bp, 1, owner_id) returning id into v1;
+  insert into public.task_templates (workspace_id, blueprint_version_id, key, title, phase, position, estimated_hours, due_offset_days)
+  values (ws, v1, 'kickoff', 'Kickoff call', 'Plan', 1, 1, 0) returning id into t1;
+  insert into public.task_templates (workspace_id, blueprint_version_id, key, title, phase, position, estimated_hours, due_offset_days, requires_approval, approval_approver)
+  values (ws, v1, 'sitemap', 'Sitemap and wireframes', 'Plan', 2, 6, 7, true, 'client') returning id into t2;
+  insert into public.task_templates (workspace_id, blueprint_version_id, key, title, phase, position, estimated_hours, due_offset_days)
+  values (ws, v1, 'build', 'Build pages', 'Build', 3, 20, 21) returning id into t3;
+  insert into public.task_templates (workspace_id, blueprint_version_id, key, title, phase, position, estimated_hours, due_offset_days, requires_approval, approval_approver)
+  values (ws, v1, 'launch', 'Launch', 'Ship', 4, 2, 28, true, 'internal') returning id into t4;
+  insert into public.task_template_dependencies (workspace_id, blueprint_version_id, task_template_id, depends_on_id) values
+    (ws, v1, t2, t1), (ws, v1, t3, t2), (ws, v1, t4, t3);
+  insert into public.input_templates (workspace_id, blueprint_version_id, key, label, input_kind, blocks_task_template_id) values
+    (ws, v1, 'brand_assets', 'Logo and brand files (Drive link)', 'file', t3),
+    (ws, v1, 'hosting_access', 'Hosting access — where the credential is stored', 'access_confirmation', t4);
+
+  update public.blueprint_versions
+    set status = 'published', change_summary = 'Initial version', published_at = now(), published_by = owner_id,
+        content_hash = encode(extensions.digest(private.blueprint_version_content(v1)::text, 'sha256'), 'hex')
+    where id = v1;
+end;
+$$;

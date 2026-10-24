@@ -38,7 +38,20 @@ select set_eq(
             ('pipeline_stages', 'DELETE'),
             ('leads', 'SELECT'),
             ('activities', 'SELECT'),
-            ('follow_ups', 'SELECT') $$,
+            ('follow_ups', 'SELECT'),
+            ('services', 'SELECT'),
+            ('packages', 'SELECT'),
+            ('package_services', 'SELECT'),
+            ('package_services', 'DELETE'),
+            ('blueprints', 'SELECT'),
+            ('blueprint_versions', 'SELECT'),
+            ('blueprint_versions', 'DELETE'),
+            ('task_templates', 'SELECT'),
+            ('task_templates', 'DELETE'),
+            ('task_template_dependencies', 'SELECT'),
+            ('task_template_dependencies', 'DELETE'),
+            ('input_templates', 'SELECT'),
+            ('input_templates', 'DELETE') $$,
   'authenticated has only the documented table privileges'
 );
 
