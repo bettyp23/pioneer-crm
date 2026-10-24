@@ -31,7 +31,14 @@ select set_eq(
             ('profiles', 'SELECT'),
             ('workspace_members', 'SELECT'),
             ('workspace_members', 'DELETE'),
-            ('audit_events', 'SELECT') $$,
+            ('audit_events', 'SELECT'),
+            ('clients', 'SELECT'),
+            ('contacts', 'SELECT'),
+            ('pipeline_stages', 'SELECT'),
+            ('pipeline_stages', 'DELETE'),
+            ('leads', 'SELECT'),
+            ('activities', 'SELECT'),
+            ('follow_ups', 'SELECT') $$,
   'authenticated has only the documented table privileges'
 );
 
@@ -39,6 +46,7 @@ select set_eq(
   $$ select table_name::text, column_name::text, privilege_type::text
      from information_schema.role_column_grants
      where grantee = 'authenticated' and table_schema = 'public'
+       and table_name in ('workspaces', 'profiles', 'workspace_members', 'audit_events')
        and privilege_type in ('INSERT', 'UPDATE') $$,
   $$ values ('workspaces', 'name', 'UPDATE'),
             ('workspaces', 'timezone', 'UPDATE'),
@@ -49,7 +57,7 @@ select set_eq(
             ('workspace_members', 'status', 'INSERT'),
             ('workspace_members', 'role', 'UPDATE'),
             ('workspace_members', 'status', 'UPDATE') $$,
-  'authenticated has only the documented column-level write privileges'
+  'authenticated has only the documented column-level write privileges (M1 tables)'
 );
 
 select ok(

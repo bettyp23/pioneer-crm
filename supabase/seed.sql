@@ -56,3 +56,52 @@ insert into public.workspace_members (workspace_id, user_id, role) values
   ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001', 'owner'),
   ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002', 'viewer'),
   ('10000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000003', 'member');
+
+-- ── M2 demo data (synthetic; local only) ────────────────────────────────────
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  owner_id uuid := '00000000-0000-4000-8000-000000000001';
+  stage record;
+  c1 uuid; c2 uuid; c3 uuid; p1 uuid; p2 uuid; l1 uuid; l2 uuid;
+begin
+  insert into public.clients (workspace_id, name, kind, status, industry, website_url, drive_folder_url, created_by)
+  values (ws, 'Northwind Example Bakery', 'organization', 'prospect', 'Food & beverage',
+          'https://northwind.example', 'https://drive.google.com/drive/folders/example-northwind', owner_id)
+  returning id into c1;
+  insert into public.clients (workspace_id, name, kind, status, industry, created_by)
+  values (ws, 'Contoso Example Dental', 'organization', 'active', 'Healthcare (business info only)', owner_id)
+  returning id into c2;
+  insert into public.clients (workspace_id, name, kind, status, created_by)
+  values (ws, 'Sam Example Consulting', 'individual', 'prospect', owner_id)
+  returning id into c3;
+
+  insert into public.contacts (workspace_id, client_id, first_name, last_name, email, job_title, is_primary, created_by)
+  values (ws, c1, 'Avery', 'Example', 'avery@northwind.example', 'Owner', true, owner_id) returning id into p1;
+  insert into public.contacts (workspace_id, client_id, first_name, last_name, email, job_title, is_primary, created_by)
+  values (ws, c2, 'Jordan', 'Example', 'jordan@contoso.example', 'Office manager', true, owner_id) returning id into p2;
+
+  select id into stage from public.pipeline_stages where workspace_id = ws and name = 'Discovery';
+  insert into public.leads (workspace_id, client_id, primary_contact_id, title, source, stage_id,
+                            estimated_value_minor, expected_close_on, owner_user_id, created_by)
+  values (ws, c1, p1, 'Website and online ordering', 'Referral', stage.id, 850000,
+          current_date + 30, owner_id, owner_id) returning id into l1;
+  select id into stage from public.pipeline_stages where workspace_id = ws and name = 'Proposal';
+  insert into public.leads (workspace_id, client_id, primary_contact_id, title, source, stage_id,
+                            estimated_value_minor, owner_user_id, created_by)
+  values (ws, c2, p2, 'Patient intake automation', 'Website form', stage.id, 1500000, owner_id, owner_id)
+  returning id into l2;
+  select id into stage from public.pipeline_stages where workspace_id = ws and name = 'Inquiry';
+  insert into public.leads (workspace_id, client_id, title, source, stage_id, created_by)
+  values (ws, c3, 'AI assistant pilot', 'LinkedIn', stage.id, owner_id);
+
+  insert into public.activities (workspace_id, client_id, lead_id, contact_id, type, subject, body, occurred_at, created_by)
+  values (ws, c1, l1, p1, 'call', 'Discovery call', 'Synthetic note: discussed ordering workflow.',
+          now() - interval '2 days', owner_id);
+
+  insert into public.follow_ups (workspace_id, client_id, lead_id, title, due_on, assignee_user_id, created_by) values
+    (ws, c1, l1, 'Send discovery summary', current_date - 1, owner_id, owner_id),
+    (ws, c2, l2, 'Check proposal questions', current_date, owner_id, owner_id),
+    (ws, c3, null, 'Book intro call', current_date + 3, owner_id, owner_id);
+end;
+$$;

@@ -3,6 +3,74 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      activities: {
+        Row: {
+          body: string | null;
+          client_id: string;
+          contact_id: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          lead_id: string | null;
+          occurred_at: string;
+          subject: string;
+          type: Database["public"]["Enums"]["activity_type"];
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body?: string | null;
+          client_id: string;
+          contact_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          lead_id?: string | null;
+          occurred_at?: string;
+          subject: string;
+          type: Database["public"]["Enums"]["activity_type"];
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          body?: string | null;
+          client_id?: string;
+          contact_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          lead_id?: string | null;
+          occurred_at?: string;
+          subject?: string;
+          type?: Database["public"]["Enums"]["activity_type"];
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "activities_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "activities_contact_fkey";
+            columns: ["client_id", "contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["client_id", "id"];
+          },
+          {
+            foreignKeyName: "activities_lead_fkey";
+            columns: ["client_id", "lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
       audit_events: {
         Row: {
           action: string;
@@ -47,6 +115,333 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "audit_events_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      clients: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          drive_folder_url: string | null;
+          id: string;
+          industry: string | null;
+          kind: Database["public"]["Enums"]["client_kind"];
+          legal_name: string | null;
+          name: string;
+          notes: string | null;
+          status: Database["public"]["Enums"]["client_status"];
+          updated_at: string;
+          website_url: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          drive_folder_url?: string | null;
+          id?: string;
+          industry?: string | null;
+          kind?: Database["public"]["Enums"]["client_kind"];
+          legal_name?: string | null;
+          name: string;
+          notes?: string | null;
+          status?: Database["public"]["Enums"]["client_status"];
+          updated_at?: string;
+          website_url?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          drive_folder_url?: string | null;
+          id?: string;
+          industry?: string | null;
+          kind?: Database["public"]["Enums"]["client_kind"];
+          legal_name?: string | null;
+          name?: string;
+          notes?: string | null;
+          status?: Database["public"]["Enums"]["client_status"];
+          updated_at?: string;
+          website_url?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "clients_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contacts: {
+        Row: {
+          archived_at: string | null;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          email: string | null;
+          first_name: string;
+          id: string;
+          is_primary: boolean;
+          job_title: string | null;
+          last_name: string | null;
+          notes: string | null;
+          phone: string | null;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string | null;
+          first_name: string;
+          id?: string;
+          is_primary?: boolean;
+          job_title?: string | null;
+          last_name?: string | null;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string | null;
+          first_name?: string;
+          id?: string;
+          is_primary?: boolean;
+          job_title?: string | null;
+          last_name?: string | null;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contacts_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+        ];
+      };
+      follow_ups: {
+        Row: {
+          assignee_user_id: string | null;
+          client_id: string;
+          completed_at: string | null;
+          contact_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          due_on: string;
+          id: string;
+          lead_id: string | null;
+          status: Database["public"]["Enums"]["follow_up_status"];
+          title: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          assignee_user_id?: string | null;
+          client_id: string;
+          completed_at?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          due_on: string;
+          id?: string;
+          lead_id?: string | null;
+          status?: Database["public"]["Enums"]["follow_up_status"];
+          title: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          assignee_user_id?: string | null;
+          client_id?: string;
+          completed_at?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          due_on?: string;
+          id?: string;
+          lead_id?: string | null;
+          status?: Database["public"]["Enums"]["follow_up_status"];
+          title?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_assignee_fkey";
+            columns: ["workspace_id", "assignee_user_id"];
+            isOneToOne: false;
+            referencedRelation: "workspace_members";
+            referencedColumns: ["workspace_id", "user_id"];
+          },
+          {
+            foreignKeyName: "follow_ups_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "follow_ups_contact_fkey";
+            columns: ["client_id", "contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["client_id", "id"];
+          },
+          {
+            foreignKeyName: "follow_ups_lead_fkey";
+            columns: ["client_id", "lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
+      leads: {
+        Row: {
+          archived_at: string | null;
+          client_id: string;
+          closed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          estimated_value_minor: number | null;
+          expected_close_on: string | null;
+          id: string;
+          lost_reason: string | null;
+          owner_user_id: string | null;
+          primary_contact_id: string | null;
+          source: string | null;
+          stage_id: string;
+          title: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          archived_at?: string | null;
+          client_id: string;
+          closed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          estimated_value_minor?: number | null;
+          expected_close_on?: string | null;
+          id?: string;
+          lost_reason?: string | null;
+          owner_user_id?: string | null;
+          primary_contact_id?: string | null;
+          source?: string | null;
+          stage_id: string;
+          title: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          client_id?: string;
+          closed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          estimated_value_minor?: number | null;
+          expected_close_on?: string | null;
+          id?: string;
+          lost_reason?: string | null;
+          owner_user_id?: string | null;
+          primary_contact_id?: string | null;
+          source?: string | null;
+          stage_id?: string;
+          title?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leads_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "leads_owner_fkey";
+            columns: ["workspace_id", "owner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "workspace_members";
+            referencedColumns: ["workspace_id", "user_id"];
+          },
+          {
+            foreignKeyName: "leads_primary_contact_fkey";
+            columns: ["client_id", "primary_contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["client_id", "id"];
+          },
+          {
+            foreignKeyName: "leads_stage_fkey";
+            columns: ["workspace_id", "stage_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_stages";
+            referencedColumns: ["workspace_id", "id"];
+          },
+        ];
+      };
+      pipeline_stages: {
+        Row: {
+          created_at: string;
+          id: string;
+          kind: Database["public"]["Enums"]["stage_kind"];
+          name: string;
+          position: number;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["stage_kind"];
+          name: string;
+          position: number;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["stage_kind"];
+          name?: string;
+          position?: number;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_workspace_id_fkey";
             columns: ["workspace_id"];
             isOneToOne: false;
             referencedRelation: "workspaces";
@@ -152,11 +547,16 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      move_pipeline_stage: { Args: { direction: number; stage_id: string }; Returns: undefined };
     };
     Enums: {
+      activity_type: "note" | "call" | "email" | "meeting";
       actor_type: "user" | "system" | "agent";
+      client_kind: "organization" | "individual";
+      client_status: "prospect" | "active" | "paused" | "former";
+      follow_up_status: "open" | "done" | "cancelled";
       member_status: "active" | "suspended";
+      stage_kind: "open" | "won" | "lost";
       workspace_role: "owner" | "admin" | "member" | "viewer";
     };
     CompositeTypes: {
@@ -269,8 +669,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: ["note", "call", "email", "meeting"],
       actor_type: ["user", "system", "agent"],
+      client_kind: ["organization", "individual"],
+      client_status: ["prospect", "active", "paused", "former"],
+      follow_up_status: ["open", "done", "cancelled"],
       member_status: ["active", "suspended"],
+      stage_kind: ["open", "won", "lost"],
       workspace_role: ["owner", "admin", "member", "viewer"],
     },
   },
