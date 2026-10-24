@@ -8,6 +8,7 @@ import { FollowUpList } from "@/features/follow-ups/components/follow-up-list";
 import { followUpBucket } from "@/features/follow-ups/schemas";
 import { listOpenFollowUps } from "@/features/follow-ups/server/queries";
 import { listLeads, listStages } from "@/features/leads/server/queries";
+import { ensureRoutineRuns, listDueRuns, listIssues } from "@/features/operations/server/queries";
 import { listPendingApprovals, listReadyTasks } from "@/features/projects/server/queries";
 import { formatIsoDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -17,20 +18,22 @@ import { requireMember } from "@/server/auth/session";
 export const metadata: Metadata = { title: "Dashboard" };
 
 // Widgets planned for the "Today" dashboard (docs/architecture.md §8) that later milestones fill.
-const UPCOMING_WIDGETS = [
-  { title: "Routines due", description: "Recurring operations due today.", milestone: 5 },
-  { title: "High-severity issues", description: "Open high and critical issues.", milestone: 5 },
-];
+const UPCOMING_WIDGETS: { title: string; description: string; milestone: number }[] = [];
 
 export default async function DashboardPage() {
   const { member } = await requireMember();
-  const [{ followUps, today }, leads, stages, readyTasks, approvals] = await Promise.all([
-    listOpenFollowUps({ scope: "mine" }),
-    listLeads(),
-    listStages(),
-    listReadyTasks(),
-    listPendingApprovals(),
-  ]);
+  const opsToday = await ensureRoutineRuns();
+  const [{ followUps, today }, leads, stages, readyTasks, approvals, dueRuns, openIssues] =
+    await Promise.all([
+      listOpenFollowUps({ scope: "mine" }),
+      listLeads(),
+      listStages(),
+      listReadyTasks(),
+      listPendingApprovals(),
+      listDueRuns(opsToday),
+      listIssues({ open: true }),
+    ]);
+  const severeIssues = openIssues.filter((i) => i.severity === "high" || i.severity === "critical");
   const due = followUps.filter((f) => followUpBucket(f.due_on, today) !== "upcoming");
   const overdueCount = due.filter((f) => f.due_on < today).length;
   const openStageIds = new Set(stages.filter((s) => s.kind === "open").map((s) => s.id));
@@ -138,6 +141,74 @@ export default async function DashboardPage() {
                     </Link>
                     <span className="text-muted-foreground block text-xs">
                       {a.project?.name} · {a.approver_type === "client" ? "client" : "internal"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              <h2>Routines due</h2>
+            </CardTitle>
+            <CardDescription>
+              {dueRuns.length} due or missed.{" "}
+              <Link href="/routines" className="underline underline-offset-2">
+                Routines
+              </Link>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {dueRuns.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Nothing due.</p>
+            ) : (
+              <ul className="divide-y text-sm">
+                {dueRuns.slice(0, 6).map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-2 py-2">
+                    <Link href={`/routines/${r.routine?.id}`} className="hover:underline">
+                      {r.routine?.name}
+                      <span className="text-muted-foreground block text-xs">
+                        {r.routine?.client?.name ?? "Internal"}
+                      </span>
+                    </Link>
+                    <span className="text-muted-foreground text-xs">
+                      {r.scheduled_for < opsToday ? "missed · " : ""}
+                      {formatIsoDate(r.scheduled_for)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              <h2>High-severity issues</h2>
+            </CardTitle>
+            <CardDescription>
+              {severeIssues.length} open high or critical.{" "}
+              <Link href="/issues" className="underline underline-offset-2">
+                Issues
+              </Link>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {severeIssues.length === 0 ? (
+              <p className="text-muted-foreground text-sm">None open.</p>
+            ) : (
+              <ul className="divide-y text-sm">
+                {severeIssues.slice(0, 6).map((i) => (
+                  <li key={i.id} className="py-2">
+                    <Link href={`/issues/${i.id}`} className="hover:underline">
+                      {i.title}
+                    </Link>
+                    <span className="text-muted-foreground block text-xs capitalize">
+                      {i.client?.name} · {i.severity}
                     </span>
                   </li>
                 ))}

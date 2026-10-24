@@ -180,3 +180,43 @@ begin
   perform set_config('request.jwt.claims', '', true);
 end;
 $$;
+
+-- ── M5 demo operations (synthetic; local only) ─────────────────────────────
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  owner_id uuid := '00000000-0000-4000-8000-000000000001';
+  c1 uuid; c2 uuid; d uuid; r1 uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', owner_id, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+  select id into c1 from public.clients where workspace_id = ws and name = 'Northwind Example Bakery';
+  select id into c2 from public.clients where workspace_id = ws and name = 'Contoso Example Dental';
+
+  insert into public.routines (workspace_id, client_id, name, description, cadence, anchor_on, owner_user_id, runbook_url, created_by, created_at)
+  values (ws, c1, 'Website backup check', 'Confirm last night''s backup exists.', 'weekly', current_date - 14, owner_id,
+          'https://docs.google.com/document/d/example-runbook', owner_id, now() - interval '14 days')
+  returning id into r1;
+  insert into public.routines (workspace_id, name, cadence, anchor_on, owner_user_id, created_by, created_at)
+  values (ws, 'Monthly bookkeeping review', 'monthly', date_trunc('month', current_date)::date, owner_id, owner_id,
+          now() - interval '30 days');
+  perform public.generate_routine_runs(ws);
+  update public.routine_runs set status = 'done', notes = 'Synthetic: backup present'
+    where routine_id = r1 and scheduled_for = current_date - 14;
+
+  insert into public.diagnostics (workspace_id, client_id, diagnostic_type, performed_on, performed_by, summary, score, created_by)
+  values (ws, c1, 'Website audit', current_date - 5, owner_id, 'Synthetic: slow pages and missing alt text.', 64, owner_id)
+  returning id into d;
+  insert into public.issues (workspace_id, client_id, diagnostic_id, title, severity, assignee_user_id, created_by) values
+    (ws, c1, d, 'Homepage loads in 6 seconds', 'high', owner_id, owner_id),
+    (ws, c1, d, 'Images missing alt text', 'medium', null, owner_id);
+
+  insert into public.invoices (workspace_id, client_id, external_system, external_number, issued_on, due_on, amount_minor, status, created_by) values
+    (ws, c2, 'quickbooks', 'EX-1001', current_date - 40, current_date - 10, 450000, 'sent', owner_id),
+    (ws, c1, 'quickbooks', 'EX-1002', current_date - 3, current_date + 27, 425000, 'sent', owner_id);
+  insert into public.invoices (workspace_id, client_id, external_system, external_number, issued_on, due_on, amount_minor, status, paid_on, created_by)
+  values (ws, c2, 'quickbooks', 'EX-0999', current_date - 70, current_date - 40, 300000, 'paid', current_date - 38, owner_id);
+
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;

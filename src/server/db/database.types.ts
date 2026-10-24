@@ -155,6 +155,13 @@ export type Database = {
             foreignKeyName: "approvals_project_fkey";
             columns: ["workspace_id", "project_id"];
             isOneToOne: false;
+            referencedRelation: "project_health";
+            referencedColumns: ["workspace_id", "project_id"];
+          },
+          {
+            foreignKeyName: "approvals_project_fkey";
+            columns: ["workspace_id", "project_id"];
+            isOneToOne: false;
             referencedRelation: "project_progress";
             referencedColumns: ["workspace_id", "project_id"];
           },
@@ -428,6 +435,13 @@ export type Database = {
             foreignKeyName: "client_input_requests_project_fkey";
             columns: ["workspace_id", "project_id"];
             isOneToOne: false;
+            referencedRelation: "project_health";
+            referencedColumns: ["workspace_id", "project_id"];
+          },
+          {
+            foreignKeyName: "client_input_requests_project_fkey";
+            columns: ["workspace_id", "project_id"];
+            isOneToOne: false;
             referencedRelation: "project_progress";
             referencedColumns: ["workspace_id", "project_id"];
           },
@@ -567,6 +581,77 @@ export type Database = {
           },
         ];
       };
+      diagnostics: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          diagnostic_type: string;
+          id: string;
+          performed_by: string | null;
+          performed_on: string;
+          project_id: string | null;
+          report_url: string | null;
+          score: number | null;
+          summary: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          diagnostic_type: string;
+          id?: string;
+          performed_by?: string | null;
+          performed_on: string;
+          project_id?: string | null;
+          report_url?: string | null;
+          score?: number | null;
+          summary: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          diagnostic_type?: string;
+          id?: string;
+          performed_by?: string | null;
+          performed_on?: string;
+          project_id?: string | null;
+          report_url?: string | null;
+          score?: number | null;
+          summary?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "diagnostics_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "diagnostics_performer_fkey";
+            columns: ["workspace_id", "performed_by"];
+            isOneToOne: false;
+            referencedRelation: "workspace_members";
+            referencedColumns: ["workspace_id", "user_id"];
+          },
+          {
+            foreignKeyName: "diagnostics_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
       follow_ups: {
         Row: {
           assignee_user_id: string | null;
@@ -703,6 +788,169 @@ export type Database = {
           },
         ];
       };
+      invoices: {
+        Row: {
+          amount_minor: number;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          due_on: string | null;
+          external_number: string;
+          external_system: Database["public"]["Enums"]["invoice_system"];
+          external_url: string | null;
+          id: string;
+          issued_on: string;
+          notes: string | null;
+          paid_on: string | null;
+          project_id: string | null;
+          status: Database["public"]["Enums"]["invoice_status"];
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_minor: number;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          due_on?: string | null;
+          external_number: string;
+          external_system: Database["public"]["Enums"]["invoice_system"];
+          external_url?: string | null;
+          id?: string;
+          issued_on: string;
+          notes?: string | null;
+          paid_on?: string | null;
+          project_id?: string | null;
+          status?: Database["public"]["Enums"]["invoice_status"];
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          amount_minor?: number;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          due_on?: string | null;
+          external_number?: string;
+          external_system?: Database["public"]["Enums"]["invoice_system"];
+          external_url?: string | null;
+          id?: string;
+          issued_on?: string;
+          notes?: string | null;
+          paid_on?: string | null;
+          project_id?: string | null;
+          status?: Database["public"]["Enums"]["invoice_status"];
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "invoices_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
+      issues: {
+        Row: {
+          assignee_user_id: string | null;
+          client_id: string;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          diagnostic_id: string | null;
+          id: string;
+          opened_at: string;
+          project_id: string | null;
+          resolution: string | null;
+          resolved_at: string | null;
+          severity: Database["public"]["Enums"]["issue_severity"];
+          status: Database["public"]["Enums"]["issue_status"];
+          title: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          assignee_user_id?: string | null;
+          client_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          diagnostic_id?: string | null;
+          id?: string;
+          opened_at?: string;
+          project_id?: string | null;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          severity?: Database["public"]["Enums"]["issue_severity"];
+          status?: Database["public"]["Enums"]["issue_status"];
+          title: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          assignee_user_id?: string | null;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          diagnostic_id?: string | null;
+          id?: string;
+          opened_at?: string;
+          project_id?: string | null;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          severity?: Database["public"]["Enums"]["issue_severity"];
+          status?: Database["public"]["Enums"]["issue_status"];
+          title?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "issues_assignee_fkey";
+            columns: ["workspace_id", "assignee_user_id"];
+            isOneToOne: false;
+            referencedRelation: "workspace_members";
+            referencedColumns: ["workspace_id", "user_id"];
+          },
+          {
+            foreignKeyName: "issues_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "issues_diagnostic_fkey";
+            columns: ["client_id", "diagnostic_id"];
+            isOneToOne: false;
+            referencedRelation: "diagnostics";
+            referencedColumns: ["client_id", "id"];
+          },
+          {
+            foreignKeyName: "issues_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
       leads: {
         Row: {
           archived_at: string | null;
@@ -790,6 +1038,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "pipeline_stages";
             referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "leads_stage_fkey";
+            columns: ["workspace_id", "stage_id"];
+            isOneToOne: false;
+            referencedRelation: "pipeline_summary";
+            referencedColumns: ["workspace_id", "stage_id"];
           },
         ];
       };
@@ -1025,6 +1280,13 @@ export type Database = {
             foreignKeyName: "project_tasks_project_fkey";
             columns: ["workspace_id", "project_id"];
             isOneToOne: false;
+            referencedRelation: "project_health";
+            referencedColumns: ["workspace_id", "project_id"];
+          },
+          {
+            foreignKeyName: "project_tasks_project_fkey";
+            columns: ["workspace_id", "project_id"];
+            isOneToOne: false;
             referencedRelation: "project_progress";
             referencedColumns: ["workspace_id", "project_id"];
           },
@@ -1125,6 +1387,151 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "sow_documents";
             referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
+      routine_runs: {
+        Row: {
+          completed_at: string | null;
+          completed_by: string | null;
+          created_at: string;
+          evidence_url: string | null;
+          id: string;
+          notes: string | null;
+          routine_id: string;
+          scheduled_for: string;
+          status: Database["public"]["Enums"]["routine_run_status"];
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          evidence_url?: string | null;
+          id?: string;
+          notes?: string | null;
+          routine_id: string;
+          scheduled_for: string;
+          status?: Database["public"]["Enums"]["routine_run_status"];
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          evidence_url?: string | null;
+          id?: string;
+          notes?: string | null;
+          routine_id?: string;
+          scheduled_for?: string;
+          status?: Database["public"]["Enums"]["routine_run_status"];
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "routine_runs_routine_fkey";
+            columns: ["workspace_id", "routine_id"];
+            isOneToOne: false;
+            referencedRelation: "routine_compliance";
+            referencedColumns: ["workspace_id", "routine_id"];
+          },
+          {
+            foreignKeyName: "routine_runs_routine_fkey";
+            columns: ["workspace_id", "routine_id"];
+            isOneToOne: false;
+            referencedRelation: "routines";
+            referencedColumns: ["workspace_id", "id"];
+          },
+        ];
+      };
+      routines: {
+        Row: {
+          anchor_on: string;
+          cadence: Database["public"]["Enums"]["routine_cadence"];
+          client_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          interval_count: number;
+          is_active: boolean;
+          name: string;
+          next_due_on: string | null;
+          owner_user_id: string | null;
+          project_id: string | null;
+          runbook_url: string | null;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          anchor_on: string;
+          cadence: Database["public"]["Enums"]["routine_cadence"];
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          interval_count?: number;
+          is_active?: boolean;
+          name: string;
+          next_due_on?: string | null;
+          owner_user_id?: string | null;
+          project_id?: string | null;
+          runbook_url?: string | null;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          anchor_on?: string;
+          cadence?: Database["public"]["Enums"]["routine_cadence"];
+          client_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          interval_count?: number;
+          is_active?: boolean;
+          name?: string;
+          next_due_on?: string | null;
+          owner_user_id?: string | null;
+          project_id?: string | null;
+          runbook_url?: string | null;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "routines_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "routines_owner_fkey";
+            columns: ["workspace_id", "owner_user_id"];
+            isOneToOne: false;
+            referencedRelation: "workspace_members";
+            referencedColumns: ["workspace_id", "user_id"];
+          },
+          {
+            foreignKeyName: "routines_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
+          },
+          {
+            foreignKeyName: "routines_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -1283,6 +1690,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "task_readiness";
             referencedColumns: ["project_id", "task_id"];
+          },
+          {
+            foreignKeyName: "task_dependencies_project_fkey";
+            columns: ["workspace_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_health";
+            referencedColumns: ["workspace_id", "project_id"];
           },
           {
             foreignKeyName: "task_dependencies_project_fkey";
@@ -1494,6 +1908,79 @@ export type Database = {
       };
     };
     Views: {
+      open_issues_by_severity: {
+        Row: {
+          oldest_opened_at: string | null;
+          open_count: number | null;
+          severity: Database["public"]["Enums"]["issue_severity"] | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
+      overdue_tasks: {
+        Row: {
+          assignee_user_id: string | null;
+          days_overdue: number | null;
+          due_on: string | null;
+          project_id: string | null;
+          project_name: string | null;
+          status: Database["public"]["Enums"]["task_status"] | null;
+          task_id: string | null;
+          title: string | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_assignee_fkey";
+            columns: ["workspace_id", "assignee_user_id"];
+            isOneToOne: false;
+            referencedRelation: "workspace_members";
+            referencedColumns: ["workspace_id", "user_id"];
+          },
+        ];
+      };
+      pipeline_summary: {
+        Row: {
+          estimated_value_minor: number | null;
+          kind: Database["public"]["Enums"]["stage_kind"] | null;
+          lead_count: number | null;
+          position: number | null;
+          stage_id: string | null;
+          stage_name: string | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_health: {
+        Row: {
+          blocked_tasks: number | null;
+          client_name: string | null;
+          done_tasks: number | null;
+          name: string | null;
+          open_inputs: number | null;
+          overdue_tasks: number | null;
+          pending_approvals: number | null;
+          percent_done: number | null;
+          project_id: string | null;
+          status: Database["public"]["Enums"]["project_status"] | null;
+          target_end_on: string | null;
+          total_tasks: number | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
       project_progress: {
         Row: {
           done_tasks: number | null;
@@ -1509,6 +1996,50 @@ export type Database = {
         ComputedFields: never;
         Relationships: [];
       };
+      receivables_by_status: {
+        Row: {
+          amount_minor: number | null;
+          currency: string | null;
+          invoice_count: number | null;
+          status: Database["public"]["Enums"]["invoice_status"] | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
+      routine_compliance: {
+        Row: {
+          cadence: Database["public"]["Enums"]["routine_cadence"] | null;
+          client_id: string | null;
+          compliance_percent: number | null;
+          done_runs: number | null;
+          due_runs: number | null;
+          failed_runs: number | null;
+          is_active: boolean | null;
+          missed_runs: number | null;
+          name: string | null;
+          routine_id: string | null;
+          skipped_runs: number | null;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "routines_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "routines_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       task_readiness: {
         Row: {
           approval_satisfied: boolean | null;
@@ -1521,6 +2052,13 @@ export type Database = {
         };
         ComputedFields: never;
         Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_fkey";
+            columns: ["workspace_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "project_health";
+            referencedColumns: ["workspace_id", "project_id"];
+          },
           {
             foreignKeyName: "project_tasks_project_fkey";
             columns: ["workspace_id", "project_id"];
@@ -1568,6 +2106,10 @@ export type Database = {
         };
         Returns: string;
       };
+      generate_routine_runs: {
+        Args: { p_through?: string; p_workspace_id: string };
+        Returns: number;
+      };
       move_pipeline_stage: { Args: { direction: number; stage_id: string }; Returns: undefined };
       publish_blueprint_version: {
         Args: { p_change_summary?: string; p_version_id: string };
@@ -1609,8 +2151,14 @@ export type Database = {
       follow_up_status: "open" | "done" | "cancelled";
       input_kind: "file" | "text" | "access_confirmation" | "decision";
       input_request_status: "requested" | "received" | "accepted" | "rejected" | "waived";
+      invoice_status: "draft" | "sent" | "paid" | "overdue" | "void";
+      invoice_system: "quickbooks" | "stripe" | "wave" | "xero" | "freshbooks" | "other";
+      issue_severity: "low" | "medium" | "high" | "critical";
+      issue_status: "open" | "triaged" | "in_progress" | "resolved" | "wont_fix";
       member_status: "active" | "suspended";
       project_status: "active" | "on_hold" | "completed" | "cancelled";
+      routine_cadence: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+      routine_run_status: "pending" | "done" | "skipped" | "failed";
       sow_status: "draft" | "sent" | "signed" | "superseded" | "void";
       stage_kind: "open" | "won" | "lost";
       task_status: "todo" | "in_progress" | "in_review" | "on_hold" | "done" | "cancelled";
@@ -1737,8 +2285,14 @@ export const Constants = {
       follow_up_status: ["open", "done", "cancelled"],
       input_kind: ["file", "text", "access_confirmation", "decision"],
       input_request_status: ["requested", "received", "accepted", "rejected", "waived"],
+      invoice_status: ["draft", "sent", "paid", "overdue", "void"],
+      invoice_system: ["quickbooks", "stripe", "wave", "xero", "freshbooks", "other"],
+      issue_severity: ["low", "medium", "high", "critical"],
+      issue_status: ["open", "triaged", "in_progress", "resolved", "wont_fix"],
       member_status: ["active", "suspended"],
       project_status: ["active", "on_hold", "completed", "cancelled"],
+      routine_cadence: ["daily", "weekly", "monthly", "quarterly", "yearly"],
+      routine_run_status: ["pending", "done", "skipped", "failed"],
       sow_status: ["draft", "sent", "signed", "superseded", "void"],
       stage_kind: ["open", "won", "lost"],
       task_status: ["todo", "in_progress", "in_review", "on_hold", "done", "cancelled"],

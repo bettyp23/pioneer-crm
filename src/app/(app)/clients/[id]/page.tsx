@@ -25,6 +25,9 @@ import { listLeads, listMemberOptions, listStages } from "@/features/leads/serve
 import { ProjectTable } from "@/features/projects/components/project-table";
 import { SowPanel } from "@/features/projects/components/sow-panel";
 import { listClientSows, listProjects } from "@/features/projects/server/queries";
+import { InvoiceTable } from "@/features/operations/components/invoice-table";
+import { IssueTable } from "@/features/operations/components/issue-table";
+import { listDiagnostics, listInvoices, listIssues } from "@/features/operations/server/queries";
 import { listMembers } from "@/features/workspace/server/queries";
 import { addDays, dateInZone, localDateTimeInZone } from "@/lib/dates";
 import { can } from "@/server/auth/permissions";
@@ -40,6 +43,9 @@ const TABS = [
   "follow-ups",
   "projects",
   "sows",
+  "diagnostics",
+  "issues",
+  "invoices",
 ] as const;
 const tabSchema = z.enum(TABS).catch("overview");
 
@@ -73,7 +79,9 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
     },
     { key: "projects", label: "Projects", href: href("projects") },
     { key: "sows", label: "SOWs", href: href("sows") },
-    { key: "invoices", label: "Invoices", href: "", disabledLabel: "Coming in M5" },
+    { key: "diagnostics", label: "Diagnostics", href: href("diagnostics") },
+    { key: "issues", label: "Issues", href: href("issues") },
+    { key: "invoices", label: "Invoices", href: href("invoices") },
   ];
 
   return (
@@ -265,6 +273,57 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           canSign={can(member.role, "sow.record_signed")}
           today={dateInZone(new Date(), tz)}
         />
+      ) : null}
+
+      {tab === "diagnostics" ? (
+        <section className="flex flex-col gap-4">
+          {canWrite ? (
+            <Button asChild className="self-start">
+              <Link href={`/diagnostics/new?client=${client.id}`}>Record diagnostic</Link>
+            </Button>
+          ) : null}
+          <ul className="flex flex-col gap-2">
+            {(await listDiagnostics({ clientId: client.id })).map((d) => (
+              <li key={d.id} className="rounded-md border p-3 text-sm">
+                <p className="font-medium">
+                  {d.diagnostic_type}{" "}
+                  <span className="text-muted-foreground font-normal">
+                    · {d.performed_on}
+                    {d.score !== null ? ` · score ${d.score}` : ""}
+                  </span>
+                </p>
+                <p className="whitespace-pre-wrap">{d.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {tab === "issues" ? (
+        <section className="flex flex-col gap-4">
+          {canWrite ? (
+            <Button asChild className="self-start">
+              <Link href={`/issues/new?client=${client.id}`}>Open issue</Link>
+            </Button>
+          ) : null}
+          <IssueTable issues={await listIssues({ clientId: client.id })} showClient={false} />
+        </section>
+      ) : null}
+
+      {tab === "invoices" ? (
+        <section className="flex flex-col gap-4">
+          {canWrite ? (
+            <Button asChild className="self-start">
+              <Link href={`/invoices/new?client=${client.id}`}>Record invoice</Link>
+            </Button>
+          ) : null}
+          <InvoiceTable
+            invoices={await listInvoices({ clientId: client.id })}
+            today={dateInZone(new Date(), tz)}
+            canWrite={canWrite}
+            showClient={false}
+          />
+        </section>
       ) : null}
 
       {tab === "follow-ups" ? (
