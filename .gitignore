@@ -37,6 +37,7 @@ yarn-error.log*
 # env files — never commit secrets (docs/security.md §4)
 .env*
 !.env.example
+!.env.worker.example
 
 # vercel
 .vercel

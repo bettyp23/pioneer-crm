@@ -23,7 +23,7 @@ Pioneer reads one tab of the Agency Dashboard sheet and nothing else in your Dri
    `pioneer-sheet-reader@pioneer-os….iam.gserviceaccount.com`).
 8. Open the Agency Dashboard sheet → **Share** → paste that email → role **Viewer** → untick
    "Notify people" → **Share**.
-9. Add to `.env.local`:
+9. Add to `.env.worker` (the worker's own settings file, next to `.env.local`):
    ```
    # Google: read-only access to the Agency Dashboard sheet
    GOOGLE_SHEETS_KEY_FILE=/Users/bettyphipps/.config/pioneer/google-sheet-reader.json

@@ -19,7 +19,9 @@
     "db:test": "supabase test db",
     "db:lint": "supabase db lint --level warning",
     "db:types": "supabase gen types --lang typescript --local --schema public > src/server/db/database.types.ts && prettier --write src/server/db/database.types.ts",
-    "bootstrap:owner": "tsx --env-file=.env.local scripts/bootstrap-owner.ts"
+    "bootstrap:owner": "tsx --env-file=.env.local scripts/bootstrap-owner.ts",
+    "worker": "tsx --env-file=.env.worker worker/index.ts",
+    "worker:setup-local": "tsx scripts/worker-local-setup.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
@@ -31,6 +33,7 @@
     "lucide-react": "1.60.0",
     "next": "16.4.2",
     "next-themes": "0.4.6",
+    "pg": "8.23.1",
     "radix-ui": "1.8.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -43,6 +46,7 @@
     "@playwright/test": "1.64.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
