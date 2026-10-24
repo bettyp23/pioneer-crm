@@ -1,6 +1,6 @@
 # Milestone 8: Pioneer loop
 
-Status: **Plan for owner review** · 2026-10-24 · Branch (when approved) `feat/m8-pioneer-loop`
+Status: **Built, waiting for Step 0 and the live test** · 2026-10-24 · Branch `feat/m8-pioneer-loop`
 
 Replaces the old "M8 = release" from `docs/os3/`. Built on decisions D-29 to D-35.
 
@@ -130,3 +130,36 @@ workflow, a VPS. The worker only runs while your Mac is awake.
 One forward migration and new code on one branch. Before merge: drop the branch. After merge: a
 follow-up migration reverses it, the kill switch stops all agent work at once, and stopping the
 worker leaves the app working as it does today.
+
+## As built (2026-10-24)
+
+Differences from the plan above:
+
+- **One conversation per workspace**, so there is a `messages` table but no `conversations`
+  table. A second conversation can be added later without changing existing rows.
+- **Worker secrets live in `.env.worker`**, not `.env.local`. Next.js loads every variable in
+  `.env.local` into the app, so this is the only way the app never holds the webhook keys.
+  `.env.worker.example` documents the settings.
+- **`usage_limits` became `connection_brakes`** (D-33 as revised): a loop brake of 20 sends per
+  rolling hour per connection; no monthly limit, because your plans cap usage.
+- **Grok is allowed as an agent provider again** (D-36, proposed): Michael Scott's record uses
+  `xai`; budgets and the cost ledger still refuse it.
+- **Routed tasks are scanned again** before they reach Michael Scott; contact details or keys
+  block the send. Messages you write yourself are scanned when you send them and need your
+  confirmation.
+- **Not in M8: payload-bound approvals (acceptance #6).** Nothing in M8 creates proposed actions
+  automatically: replies are shown as text only, so there is nothing new to bind yet. Moved to
+  the milestone where agents first propose actions.
+- **Pioneer (Claude) sees only your message**, not Pioneer's records. Giving it read access to
+  client data is a later, separately approved step.
+
+Evidence so far (local):
+
+| Check | Result |
+|---|---|
+| Database tests | 418 / 418 (76 new in `011_pioneer_loop.test.sql`) |
+| Unit tests | 187 / 187 (20 new for the worker) |
+| Lint, format, typecheck, database lint | Clean |
+| Worker smoke test (no outside connections) | Claimed one message and failed it with "not set on this Mac"; no secrets in the log |
+| End-to-end | See the merge request |
+| Step 0 and live test | Waiting for your setup (docs/runbooks/m8-setup.md) |

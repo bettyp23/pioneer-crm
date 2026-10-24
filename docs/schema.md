@@ -323,6 +323,24 @@ docs/os3/.
 | `job_attempts` | One row per claim with outcome (running, succeeded, retry, failed, dead, timed_out, cancelled) and redacted error. Viewer-readable. |
 | schema `worker`, role `pioneer_worker` | `claim_jobs(worker, kinds[], limit)` (reaps expired leases, SKIP LOCKED, honours kill switch/agent active), `heartbeat` (false = stop), `complete_job`, `fail_job(…, retryable)` (backoff 30 s·2ⁿ ≤ 1 h; dead-letter; audited), `reap_expired`. Role is `NOLOGIN` and has no table privileges; login is enabled per environment by an operator. |
 
+## 8b. Milestone 8 — Pioneer loop (as built)
+
+Migrations `20261025000100_m8_job_waiting_status.sql` (enum value, separate transaction) and
+`20261025000200_pioneer_loop.sql`; tests `supabase/tests/011_pioneer_loop.test.sql`. Decisions
+D-29, D-30, D-33…D-36; plan in docs/milestone-8-plan.md.
+
+| Object | Notes |
+|---|---|
+| `agents` | Adds `kind` (`manual`, `claude_task`, `grok_team`), `integration_state` (`not_connected`, `verified`, `error`) and `last_verified_at`, set only by an accepted reply. New workspaces get `pioneer` (Pioneer (Claude), `anthropic`) and `michael_scott` (Michael Scott (Grok), `xai`); the eight M7 roles are retired (inactive, renamed "(retired)"). `agents_provider_supported` now refuses only `perplexity` (D-36). |
+| `connection_brakes` | One row per workspace and connection (`claude_task`, `grok_webhook`): `hourly_limit` (default 20, 1–30), `paused_at`, `paused_reason`. Tripped by `worker.begin_dispatch`; cleared only by `resume_connection` (owner + MFA, audited). `private.job_may_run` also checks it. |
+| `jobs` | Status `waiting_external` (no lease; `waiting_until` set iff waiting), `at_most_once` (failures never requeue; `retry_job` allows exactly one more attempt; check `jobs_at_most_once_attempts`), `external_ref` (e.g. the Claude session ID). `cancel_job` also cancels waiting jobs. |
+| `job_attempts` | Outcome `dispatched` added. |
+| `job_dispatches` | One row per sent attempt: connection, expected sender (`pioneer_brain`/`michael_scott`), SHA-256 of the one-time code (not granted to `authenticated`), `expires_at`, `used_at`. Counted by the loop brake. |
+| `result_rows` | Every sheet row the worker processed, keyed by the SHA-256 of its content; `accepted` or `ignored` with a reason. Rows for unknown jobs have no workspace and aren't visible in the app. |
+| `messages` | One conversation per workspace. Author `owner`/`pioneer`/`michael_scott`/`system`; owner messages carry `author_user_id` and `recipient` (`auto`, `claude`, `michael_scott`); kind `message`/`answer`/`routed`/`result`/`needs_decision`/`notice`; body 1–20 000 chars; `flagged` when sent after the sensitive-content warning. Viewer-readable; no direct writes, edits or deletes. |
+| `send_message(ws, body, recipient, flagged)` | Owner/admin + MFA. Inserts the message and one at-most-once job (`claude.task` for auto/claude with `mode` auto/answer, `grok.dispatch` for michael_scott) in one transaction; audited `message.sent` with length only. |
+| schema `worker` (M8 additions) | `begin_dispatch(job, worker, code_sha256, wait_seconds)` → `ok`/`braked`/`already_sent`/`not_held`; `mark_waiting(job, worker, external_ref)`; `filter_new_rows(keys[])`; `accept_result(row_key, job, code, from, kind, client, text)` → `accepted`/`duplicate`/`ignored: <reason>` (checks job waiting, code hash, unused, unexpired, sender, kind; redacts key-like text; a Pioneer `route` in auto mode queues one `grok.dispatch`); `expire_waiting()` (fails overdue sends, posts a notice). |
+
 ## 9. Grants summary
 
 - `anon`: no privileges on any table, view, sequence or function in `public`.
