@@ -146,3 +146,37 @@ begin
     where id = v1;
 end;
 $$;
+
+-- ── M4 demo SOW and project (synthetic; local only) ─────────────────────────
+-- Generated through the real function, acting as the demo owner with MFA.
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  owner_id uuid := '00000000-0000-4000-8000-000000000001';
+  c uuid; sow uuid; v uuid; p uuid; t record;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', owner_id, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+
+  select id into c from public.clients where workspace_id = ws and name = 'Northwind Example Bakery';
+  insert into public.sow_documents (workspace_id, client_id, title, version_label, drive_url, status, scope_summary, created_by)
+  values (ws, c, 'Website and online ordering SOW', 'v1', 'https://drive.google.com/file/d/example-sow', 'sent',
+          'Synthetic scope summary.', owner_id)
+  returning id into sow;
+  update public.sow_documents set status = 'signed', signed_on = current_date - 3, client_signatory = 'Avery Example'
+    where id = sow;
+
+  select bv.id into v from public.blueprint_versions bv join public.blueprints b on b.id = bv.blueprint_id
+    where b.workspace_id = ws and b.name = 'Website delivery' and bv.status = 'published';
+  p := public.generate_project(c, v, 'Northwind website', current_date - 3,
+    '20000000-0000-4000-8000-000000000001', sow);
+
+  -- Kickoff done so the board shows progress.
+  select * into t from public.project_tasks where project_id = p and key = 'kickoff';
+  perform public.transition_task(t.id, 'in_progress', t.version);
+  perform public.transition_task(t.id, 'in_review', t.version + 1);
+  perform public.transition_task(t.id, 'done', t.version + 2);
+
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;

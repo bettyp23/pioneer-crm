@@ -1,6 +1,6 @@
 # Pioneer OS — MVP Schema
 
-Status: **M1–M3 as-built** (§3–§5, §9) · later sections proposed · Last updated: 2026-10-20
+Status: **M1–M4 as-built** (§3–§6, §9) · later sections proposed · Last updated: 2026-10-20
 
 This is the target schema across milestones. Each milestone migrates only its own tables.
 The SQL in `supabase/migrations/` is authoritative once it exists; this document explains
@@ -210,7 +210,25 @@ As-built notes:
 RPC: `create_draft_version(blueprint_id, from_version_id?)` (copies a version into a new
 draft), `publish_blueprint_version(version_id)`, `retire_blueprint_version(version_id)`.
 
-## 6. Milestone 4 — projects and delivery
+## 6. Milestone 4 — projects and delivery (as built)
+
+Migration `20261020000600_projects.sql`; tests `supabase/tests/007_projects.test.sql`. As-built notes:
+
+- `projects`, `project_tasks`, `client_input_requests`, `approvals` have **no insert grants**; they are
+  created by `generate_project` / `request_approval` and change state only via
+  `transition_task`, `set_input_request_status`, `decide_approval` (security definer in `private`,
+  re-check role + MFA, invoker wrappers in `public`). Members may edit a task's assignee/due date and a
+  project's name/status/target date directly (audited).
+- `sow_documents`: inserted as draft/sent only; `private.guard_sow_document` enforces transitions,
+  owner-only signing, and freezes signed rows except → superseded/void.
+- `client_input_requests` adds `key`, `description`, `required`, `response_text` (text/decision answers;
+  for access confirmations, *where* the credential is stored) and `version`.
+- `approvals` adds `client_id` (so `client_contact_id` must be that client's contact), `title`,
+  one pending approval per task (partial unique), immutability trigger.
+- Transition rules: `→ in_progress` needs prerequisites done/cancelled (D-7) and blocking inputs
+  accepted/waived; `→ done` needs an approved approval when required; cancel needs owner/admin, a reason
+  and `p_confirm_unblock` when other open tasks depend on it.
+- `activities.project_id` added (FK scoped to the same client).
 
 | Table | Key columns | Constraints / notes |
 |---|---|---|

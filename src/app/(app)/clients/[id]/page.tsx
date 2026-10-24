@@ -22,14 +22,25 @@ import { FollowUpList } from "@/features/follow-ups/components/follow-up-list";
 import { listOpenFollowUps } from "@/features/follow-ups/server/queries";
 import { LeadTable } from "@/features/leads/components/lead-table";
 import { listLeads, listMemberOptions, listStages } from "@/features/leads/server/queries";
+import { ProjectTable } from "@/features/projects/components/project-table";
+import { SowPanel } from "@/features/projects/components/sow-panel";
+import { listClientSows, listProjects } from "@/features/projects/server/queries";
 import { listMembers } from "@/features/workspace/server/queries";
-import { addDays, localDateTimeInZone } from "@/lib/dates";
+import { addDays, dateInZone, localDateTimeInZone } from "@/lib/dates";
 import { can } from "@/server/auth/permissions";
 import { requireMember } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "Client" };
 
-const TABS = ["overview", "contacts", "leads", "activity", "follow-ups"] as const;
+const TABS = [
+  "overview",
+  "contacts",
+  "leads",
+  "activity",
+  "follow-ups",
+  "projects",
+  "sows",
+] as const;
 const tabSchema = z.enum(TABS).catch("overview");
 
 export default async function ClientPage({ params, searchParams }: PageProps<"/clients/[id]">) {
@@ -60,8 +71,8 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
       label: `Follow-ups (${followUps.followUps.length})`,
       href: href("follow-ups"),
     },
-    { key: "projects", label: "Projects", href: "", disabledLabel: "Coming in M4" },
-    { key: "sows", label: "SOWs", href: "", disabledLabel: "Coming in M4" },
+    { key: "projects", label: "Projects", href: href("projects") },
+    { key: "sows", label: "SOWs", href: href("sows") },
     { key: "invoices", label: "Invoices", href: "", disabledLabel: "Coming in M5" },
   ];
 
@@ -232,6 +243,27 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           timezone={tz}
           contacts={contactOptions}
           leads={leads.map((l) => ({ id: l.id, name: l.title }))}
+        />
+      ) : null}
+
+      {tab === "projects" ? (
+        <section className="flex flex-col gap-4">
+          {can(member.role, "projects.generate") && !client.archived_at ? (
+            <Button asChild className="self-start">
+              <Link href={`/projects/new?client=${client.id}`}>Generate project</Link>
+            </Button>
+          ) : null}
+          <ProjectTable projects={await listProjects({ clientId: client.id })} showClient={false} />
+        </section>
+      ) : null}
+
+      {tab === "sows" ? (
+        <SowPanel
+          clientId={client.id}
+          sows={await listClientSows(client.id)}
+          canWrite={canWrite}
+          canSign={can(member.role, "sow.record_signed")}
+          today={dateInZone(new Date(), tz)}
         />
       ) : null}
 

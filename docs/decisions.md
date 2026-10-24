@@ -22,13 +22,13 @@ Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless y
 | ID | Decision | Recommendation | Milestone | Status |
 |---|---|---|---|---|
 | D-3 | Pipeline stages | Owner-configurable table seeded with Inquiry, Discovery, Proposal, Negotiation, Won, Lost. Please supply your real stages. | M2 | ACCEPTED 2026-10-20 (default six) |
-| D-6 | SOW required to generate a project? | Yes — require a `signed` SOW, except an explicit "internal / pilot" flag with a reason (audited). | M4 | OPEN |
-| D-7 | Do cancelled prerequisite tasks unblock dependents? | Yes, but cancelling a task that has dependents requires confirmation listing them, and is audited. | M4 | OPEN |
-| D-8 | Blueprints per project | One project = one blueprint version for MVP. Packages map to one blueprint; multi-blueprint projects deferred. | M3/M4 | OPEN |
+| D-6 | SOW required to generate a project? | Yes — require a `signed` SOW, except an explicit "internal / pilot" flag with a reason (audited). | M4 | ACCEPTED 2026-10-20 |
+| D-7 | Do cancelled prerequisite tasks unblock dependents? | Yes, but cancelling a task that has dependents requires confirmation listing them, and is audited. | M4 | ACCEPTED 2026-10-20 |
+| D-8 | Blueprints per project | One project = one blueprint version for MVP. Packages map to one blueprint; multi-blueprint projects deferred. | M3/M4 | ACCEPTED 2026-10-20 |
 | D-9 | Invoice system of record | Which tool issues invoices (QuickBooks, Stripe, Wave, other)? Pioneer OS stores metadata + link only. | M5 | OPEN |
 | D-10 | What "Grok Bot" is and how it is reached | Prototype assumes no programmatic API: manual copy/export hand-off. If an API exists (e.g., xAI API), integration needs a separate review. | M6 | OPEN |
 | D-15 | Routine scheduling | Vercel Cron → idempotent SQL function, daily. | M5 | PROPOSED |
-| D-16 | Client approvals | Recorded internally with evidence link (e.g., Drive copy of the approval email); no client portal. | M4 | PROPOSED |
+| D-16 | Client approvals | Recorded internally with evidence link (e.g., Drive copy of the approval email); no client portal. | M4 | PROPOSED — implemented in M4 |
 | D-17 | Activity immutability | Activities editable for 24 h by author, afterwards owner-only edit (audited). | M2 | PROPOSED — implemented as stated in M2 |
 
 ## Accepted (from the assignment brief)
