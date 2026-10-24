@@ -77,7 +77,10 @@ select set_eq(
             ('proposed_actions', 'SELECT'),
             ('ai_usage', 'SELECT'),
             ('ai_spend_this_month', 'SELECT'),
-            ('job_attempts', 'SELECT') $$,
+            ('job_attempts', 'SELECT'),
+            ('connection_brakes', 'SELECT'),
+            ('result_rows', 'SELECT'),
+            ('messages', 'SELECT') $$,
   'authenticated has only the documented table privileges'
 );
 

@@ -31,13 +31,13 @@ export const PROVIDERS = [
   "openai",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];
-// Grok (xAI) and Perplexity are no longer part of the stack (D-24); the database still knows them
-// so historic ledger rows stay readable, but nothing new can use them.
+// Perplexity is retired (D-24). Grok is back as Michael Scott's team, reached through his
+// webhook on the owner's Grok plan (D-34), so it is not offered for new API-based agents.
 export const SELECTABLE_PROVIDERS = ["manual", "anthropic", "openrouter", "openai"] as const;
 export type SelectableProvider = (typeof SELECTABLE_PROVIDERS)[number];
 export const PROVIDER_LABELS: Record<Provider, string> = {
   manual: "Manual",
-  xai: "xAI (Grok) · retired",
+  xai: "Grok",
   anthropic: "Anthropic (Claude)",
   perplexity: "Perplexity · retired",
   openrouter: "OpenRouter",
@@ -80,10 +80,11 @@ export const ACTION_STATUS_LABELS = {
   cancelled: "Cancelled",
 } as const;
 
-// Durable jobs (D-27): run by the VPS worker; people only watch, retry and cancel.
+// Durable jobs (D-27): run by the Pioneer worker; people only watch, retry and cancel.
 export const JOB_STATUS_LABELS = {
   queued: "Queued",
   running: "Running",
+  waiting_external: "Waiting for reply",
   succeeded: "Done",
   failed: "Failed",
   dead: "Gave up",

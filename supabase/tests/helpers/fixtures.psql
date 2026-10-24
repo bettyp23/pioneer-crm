@@ -63,3 +63,21 @@ begin
     ('a0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-0000000000b1', 'owner', 'active');
 end;
 $$;
+
+-- The eight M7 roles. Since M8 (D-30) new workspaces get only Pioneer (Claude) and Michael Scott
+-- (Grok); the M6/M7 tests add these to test work items and jobs as they were built.
+create function pg_temp.seed_m7_roles(ws uuid)
+returns void
+language sql
+as $$
+  insert into public.agents (workspace_id, key, name, role_summary, provider, allowed_work_types) values
+    (ws, 'operations', 'Operations Agent', 'Synthetic', 'openrouter', '{plan,operations,other}'),
+    (ws, 'sales', 'Sales Agent', 'Synthetic', 'openrouter', '{research,draft_message,plan}'),
+    (ws, 'client_onboarding', 'Client Onboarding Agent', 'Synthetic', 'openrouter', '{draft_message,plan,operations}'),
+    (ws, 'development', 'Development Agent', 'Synthetic', 'openai', '{code,plan}'),
+    (ws, 'qa_security', 'QA & Security Agent', 'Synthetic', 'openrouter', '{qa}'),
+    (ws, 'marketing_seo', 'Marketing & SEO Agent', 'Synthetic', 'openrouter', '{research,draft_message,qa}'),
+    (ws, 'client_success', 'Client Success & Maintenance Agent', 'Synthetic', 'openrouter', '{operations,qa,draft_message}'),
+    (ws, 'finance_admin', 'Finance & Admin Agent', 'Synthetic', 'openrouter', '{operations,draft_message,other}')
+  on conflict (workspace_id, key) do nothing;
+$$;

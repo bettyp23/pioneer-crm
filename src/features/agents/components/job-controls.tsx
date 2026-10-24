@@ -15,7 +15,7 @@ export function JobControls({ id, status }: { id: string; status: JobStatus }) {
       if (result.ok) toast.success(command === "retry" ? "Job queued again" : "Job cancelled");
       else toast.error(result.error);
     });
-  if (status === "queued" || status === "running") {
+  if (status === "queued" || status === "running" || status === "waiting_external") {
     return (
       <Button size="sm" variant="ghost" disabled={pending} onClick={() => run("cancel")}>
         Cancel

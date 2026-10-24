@@ -194,8 +194,11 @@ export type Database = {
           created_at: string;
           id: string;
           instructions: string | null;
+          integration_state: string;
           is_active: boolean;
           key: string;
+          kind: string;
+          last_verified_at: string | null;
           model: string | null;
           name: string;
           provider: Database["public"]["Enums"]["ai_provider"];
@@ -209,8 +212,11 @@ export type Database = {
           created_at?: string;
           id?: string;
           instructions?: string | null;
+          integration_state?: string;
           is_active?: boolean;
           key: string;
+          kind?: string;
+          last_verified_at?: string | null;
           model?: string | null;
           name: string;
           provider?: Database["public"]["Enums"]["ai_provider"];
@@ -223,8 +229,11 @@ export type Database = {
           created_at?: string;
           id?: string;
           instructions?: string | null;
+          integration_state?: string;
           is_active?: boolean;
           key?: string;
+          kind?: string;
+          last_verified_at?: string | null;
           model?: string | null;
           name?: string;
           provider?: Database["public"]["Enums"]["ai_provider"];
@@ -767,6 +776,42 @@ export type Database = {
           },
         ];
       };
+      connection_brakes: {
+        Row: {
+          connection: string;
+          hourly_limit: number;
+          paused_at: string | null;
+          paused_reason: string | null;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          connection: string;
+          hourly_limit?: number;
+          paused_at?: string | null;
+          paused_reason?: string | null;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          connection?: string;
+          hourly_limit?: number;
+          paused_at?: string | null;
+          paused_reason?: string | null;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "connection_brakes_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       contacts: {
         Row: {
           archived_at: string | null;
@@ -1242,12 +1287,59 @@ export type Database = {
           },
         ];
       };
+      job_dispatches: {
+        Row: {
+          attempt: number;
+          code_sha256: string;
+          connection: string;
+          dispatched_at: string;
+          expected_from: string;
+          expires_at: string;
+          job_id: string;
+          used_at: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempt: number;
+          code_sha256: string;
+          connection: string;
+          dispatched_at?: string;
+          expected_from: string;
+          expires_at: string;
+          job_id: string;
+          used_at?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          attempt?: number;
+          code_sha256?: string;
+          connection?: string;
+          dispatched_at?: string;
+          expected_from?: string;
+          expires_at?: string;
+          job_id?: string;
+          used_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_dispatches_job_fkey";
+            columns: ["workspace_id", "job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["workspace_id", "id"];
+          },
+        ];
+      };
       jobs: {
         Row: {
           agent_id: string | null;
+          at_most_once: boolean;
           attempts: number;
           created_at: string;
           enqueued_by: string | null;
+          external_ref: string | null;
           finished_at: string | null;
           id: string;
           idempotency_key: string;
@@ -1264,15 +1356,18 @@ export type Database = {
           status: Database["public"]["Enums"]["job_status"];
           timeout_seconds: number;
           updated_at: string;
+          waiting_until: string | null;
           work_item_id: string | null;
           workspace_id: string;
         };
         ComputedFields: never;
         Insert: {
           agent_id?: string | null;
+          at_most_once?: boolean;
           attempts?: number;
           created_at?: string;
           enqueued_by?: string | null;
+          external_ref?: string | null;
           finished_at?: string | null;
           id?: string;
           idempotency_key: string;
@@ -1289,14 +1384,17 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"];
           timeout_seconds?: number;
           updated_at?: string;
+          waiting_until?: string | null;
           work_item_id?: string | null;
           workspace_id: string;
         };
         Update: {
           agent_id?: string | null;
+          at_most_once?: boolean;
           attempts?: number;
           created_at?: string;
           enqueued_by?: string | null;
+          external_ref?: string | null;
           finished_at?: string | null;
           id?: string;
           idempotency_key?: string;
@@ -1313,6 +1411,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["job_status"];
           timeout_seconds?: number;
           updated_at?: string;
+          waiting_until?: string | null;
           work_item_id?: string | null;
           workspace_id?: string;
         };
@@ -1434,6 +1533,61 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "pipeline_summary";
             referencedColumns: ["workspace_id", "stage_id"];
+          },
+        ];
+      };
+      messages: {
+        Row: {
+          author: string;
+          author_user_id: string | null;
+          body: string;
+          created_at: string;
+          flagged: boolean;
+          id: string;
+          job_id: string | null;
+          kind: string;
+          recipient: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author: string;
+          author_user_id?: string | null;
+          body: string;
+          created_at?: string;
+          flagged?: boolean;
+          id?: string;
+          job_id?: string | null;
+          kind?: string;
+          recipient?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          author?: string;
+          author_user_id?: string | null;
+          body?: string;
+          created_at?: string;
+          flagged?: boolean;
+          id?: string;
+          job_id?: string | null;
+          kind?: string;
+          recipient?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "messages_job_fkey";
+            columns: ["workspace_id", "job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "messages_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -1864,6 +2018,49 @@ export type Database = {
           },
           {
             foreignKeyName: "proposed_actions_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      result_rows: {
+        Row: {
+          job_id: string | null;
+          outcome: string;
+          reason: string | null;
+          row_key: string;
+          seen_at: string;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          job_id?: string | null;
+          outcome: string;
+          reason?: string | null;
+          row_key: string;
+          seen_at?: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          job_id?: string | null;
+          outcome?: string;
+          reason?: string | null;
+          row_key?: string;
+          seen_at?: string;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "result_rows_job_fkey";
+            columns: ["workspace_id", "job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "result_rows_workspace_id_fkey";
             columns: ["workspace_id"];
             isOneToOne: false;
             referencedRelation: "workspaces";
@@ -2652,8 +2849,16 @@ export type Database = {
         Returns: undefined;
       };
       request_approval: { Args: { p_task_id: string }; Returns: string };
+      resume_connection: {
+        Args: { p_connection: string; p_workspace_id: string };
+        Returns: undefined;
+      };
       retire_blueprint_version: { Args: { p_version_id: string }; Returns: undefined };
       retry_job: { Args: { p_id: string }; Returns: undefined };
+      send_message: {
+        Args: { p_body: string; p_flagged?: boolean; p_recipient?: string; p_workspace_id: string };
+        Returns: string;
+      };
       set_ai_paused: {
         Args: { p_paused: boolean; p_reason?: string; p_workspace_id: string };
         Returns: undefined;
@@ -2714,7 +2919,8 @@ export type Database = {
       invoice_system: "quickbooks" | "stripe" | "wave" | "xero" | "freshbooks" | "other";
       issue_severity: "low" | "medium" | "high" | "critical";
       issue_status: "open" | "triaged" | "in_progress" | "resolved" | "wont_fix";
-      job_status: "queued" | "running" | "succeeded" | "failed" | "dead" | "cancelled";
+      job_status:
+        "queued" | "running" | "waiting_external" | "succeeded" | "failed" | "dead" | "cancelled";
       member_status: "active" | "suspended";
       project_status: "active" | "on_hold" | "completed" | "cancelled";
       routine_cadence: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
@@ -2862,7 +3068,15 @@ export const Constants = {
       invoice_system: ["quickbooks", "stripe", "wave", "xero", "freshbooks", "other"],
       issue_severity: ["low", "medium", "high", "critical"],
       issue_status: ["open", "triaged", "in_progress", "resolved", "wont_fix"],
-      job_status: ["queued", "running", "succeeded", "failed", "dead", "cancelled"],
+      job_status: [
+        "queued",
+        "running",
+        "waiting_external",
+        "succeeded",
+        "failed",
+        "dead",
+        "cancelled",
+      ],
       member_status: ["active", "suspended"],
       project_status: ["active", "on_hold", "completed", "cancelled"],
       routine_cadence: ["daily", "weekly", "monthly", "quarterly", "yearly"],

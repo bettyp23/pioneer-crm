@@ -24,6 +24,7 @@ export const metadata: Metadata = { title: "Jobs" };
 const STATUS_VARIANT = {
   queued: "secondary",
   running: "default",
+  waiting_external: "secondary",
   succeeded: "outline",
   failed: "destructive",
   dead: "destructive",
@@ -38,12 +39,12 @@ export default async function JobsPage() {
     <>
       <PageHeader
         title="AI Command Center"
-        description="Background jobs run by the Pioneer OS worker. Failed jobs retry with growing delays; after the last attempt they stop here for you to retry or cancel."
+        description="Background jobs run by the Pioneer worker on your Mac. Failed jobs retry with growing delays, except sends to Pioneer (Claude) and Michael Scott: those go out at most once and stop here for you to retry or cancel."
       />
       <AgentTabs active="jobs" />
       {jobs.length === 0 ? (
         <EmptyState title="No jobs yet">
-          <p>Jobs appear here once the worker is connected (a later milestone).</p>
+          <p>Jobs appear here when you write to Pioneer and the worker picks them up.</p>
         </EmptyState>
       ) : (
         <div className="rounded-md border">
@@ -73,7 +74,9 @@ export default async function JobsPage() {
                   <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                     {j.finished_at
                       ? `Finished ${formatDateTime(j.finished_at, member.workspaceTimezone)}`
-                      : `Runs ${formatDateTime(j.run_after, member.workspaceTimezone)}`}
+                      : j.waiting_until
+                        ? `Reply due by ${formatDateTime(j.waiting_until, member.workspaceTimezone)}`
+                        : `Runs ${formatDateTime(j.run_after, member.workspaceTimezone)}`}
                   </TableCell>
                   <TableCell className="text-muted-foreground max-w-xs text-xs whitespace-normal">
                     {j.last_error ?? ""}

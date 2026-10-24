@@ -122,7 +122,7 @@ export async function listJobs() {
   const { data, error } = await supabase
     .from("jobs")
     .select(
-      "id, kind, status, attempts, max_attempts, run_after, last_error, finished_at, created_at, agent:agents!jobs_agent_fkey(id, name)",
+      "id, kind, status, attempts, max_attempts, run_after, waiting_until, last_error, finished_at, created_at, agent:agents!jobs_agent_fkey(id, name)",
     )
     .eq("workspace_id", member.workspaceId)
     .order("created_at", { ascending: false })

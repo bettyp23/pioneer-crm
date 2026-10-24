@@ -16,20 +16,23 @@ grant usage on schema extensions to pioneer_worker;
 delete from public.job_attempts;
 delete from public.jobs;
 
+-- Since M8 (D-30) new workspaces get only Pioneer and Michael Scott; add the M7 roles to test
+-- the kill switch and queue as built.
+select pg_temp.seed_m7_roles('a0000000-0000-4000-8000-000000000001');
 insert into ids select key, id from public.agents where workspace_id = 'a0000000-0000-4000-8000-000000000001';
 insert into ids values ('ws', 'a0000000-0000-4000-8000-000000000001');
 
 -- ── roster and providers ───────────────────────────────────────────────────
-select set_eq(
-  $$ select key from public.agents where workspace_id = 'a0000000-0000-4000-8000-000000000001' and is_active $$,
-  $$ values ('operations'), ('sales'), ('client_onboarding'), ('development'), ('qa_security'),
-            ('marketing_seo'), ('client_success'), ('finance_admin') $$,
-  'new workspaces get the eight Pioneer OS 3.0 roles'
+select results_eq(
+  $$ select connection, hourly_limit from public.connection_brakes
+     where workspace_id = 'a0000000-0000-4000-8000-000000000001' order by connection $$,
+  $$ values ('claude_task', 20), ('grok_webhook', 20) $$,
+  'every workspace gets a 20-per-hour loop brake per connection (M8, D-33)'
 );
 select throws_ok(
   $$ insert into public.agents (workspace_id, key, name, provider, allowed_work_types)
-     values ('a0000000-0000-4000-8000-000000000001', 'grok_bot', 'Grok bot', 'xai', '{research}') $$,
-  '23514', null, 'agents cannot use Grok (xAI)'
+     values ('a0000000-0000-4000-8000-000000000001', 'perplexity_bot', 'Perplexity bot', 'perplexity', '{research}') $$,
+  '23514', null, 'agents cannot use Perplexity (Grok is allowed again since M8)'
 );
 select throws_ok(
   $$ insert into public.ai_usage (workspace_id, provider, cost_microusd)
@@ -243,7 +246,7 @@ select results_eq(
 select pg_temp.as_user('b0000000-0000-4000-8000-0000000000a2');
 select lives_ok($$ select public.cancel_job(pg_temp.id('ag')) $$, 'admin cancels a queued job');
 select throws_ok($$ select public.cancel_job(pg_temp.id('ag')) $$, '23514',
-  'Only queued or running jobs can be cancelled', 'a cancelled job cannot be cancelled again');
+  'Only queued, running or waiting jobs can be cancelled', 'a cancelled job cannot be cancelled again');
 reset role;
 
 select * from finish();

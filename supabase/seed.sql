@@ -231,8 +231,8 @@ begin
   perform set_config('request.jwt.claims',
     json_build_object('sub', owner_id, 'role', 'authenticated', 'aal', 'aal2')::text, true);
   select id into c from public.clients where workspace_id = ws and name = 'Northwind Example Bakery';
-  select id into agent from public.agents where workspace_id = ws and key = 'sales';
-  update public.agents set instructions = 'Synthetic example: You are the Sales Agent for Pioneer Digital AI. Write warm, concise client messages. Never promise prices or dates.'
+  select id into agent from public.agents where workspace_id = ws and key = 'michael_scott';
+  update public.agents set instructions = 'Synthetic example: You lead the Pioneer Digital AI Grok team. Write warm, concise client messages. Never promise prices or dates.'
     where id = agent;
 
   insert into public.agent_work_items (workspace_id, agent_id, client_id, work_type, title, instructions,
@@ -265,7 +265,7 @@ declare
   ops uuid;
   j uuid;
 begin
-  select id into ops from public.agents where workspace_id = ws and key = 'operations';
+  select id into ops from public.agents where workspace_id = ws and key = 'pioneer';
   insert into public.jobs (workspace_id, kind, idempotency_key, agent_id, status, attempts, finished_at, started_at)
   values (ws, 'report.weekly_summary', 'demo-week-1', null, 'succeeded', 1, now() - interval '2 days', now() - interval '2 days');
   insert into public.jobs (workspace_id, kind, idempotency_key, agent_id, status, attempts, max_attempts,
@@ -281,3 +281,11 @@ begin
   values (ws, 'agent.run', 'demo-daily-stalled-tasks', ops);
 end;
 $$;
+
+-- ── M8 demo chat (synthetic; local only) ───────────────────────────────────
+insert into public.messages (workspace_id, author, author_user_id, recipient, kind, body, created_at) values
+  ('10000000-0000-4000-8000-000000000001', 'owner', '00000000-0000-4000-8000-000000000001', 'auto', 'message',
+   'Synthetic example: what is still open for Northwind Example Bakery?', now() - interval '3 hours'),
+  ('10000000-0000-4000-8000-000000000001', 'pioneer', null, null, 'answer',
+   'Synthetic example: the discovery follow-up email is waiting for your approval, and the sitemap needs the client''s sign-off.',
+   now() - interval '3 hours' + interval '2 minutes');
