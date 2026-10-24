@@ -53,11 +53,12 @@ test.describe("as owner", () => {
       const rows = page
         .getByRole("row")
         .filter({ hasText: kind })
-        .filter({ has: page.getByRole("button", { name: "Cancel" }) });
-      while ((await rows.count()) > 0) {
-        await rows.first().getByRole("button", { name: "Cancel" }).click();
+        .filter({ has: page.getByRole("button", { name: "Cancel", exact: true }) });
+      for (let open = await rows.count(); open > 0; open--) {
+        await rows.first().getByRole("button", { name: "Cancel", exact: true }).click();
         await expectToast(page, "Job cancelled");
-        await page.waitForLoadState("networkidle");
+        // Wait for the refreshed list before looking for the next one.
+        await expect(rows).toHaveCount(open - 1);
       }
     }
     await gotoHydrated(page, "/pioneer");
