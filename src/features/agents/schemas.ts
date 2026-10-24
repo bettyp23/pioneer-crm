@@ -35,6 +35,8 @@ export type Provider = (typeof PROVIDERS)[number];
 // webhook on the owner's Grok plan (D-34), so it is not offered for new API-based agents.
 export const SELECTABLE_PROVIDERS = ["manual", "anthropic", "openrouter", "openai"] as const;
 export type SelectableProvider = (typeof SELECTABLE_PROVIDERS)[number];
+// Agents may also run on Grok (Michael Scott's team); budgets and the cost ledger may not.
+export const AGENT_PROVIDERS = [...SELECTABLE_PROVIDERS, "xai"] as const;
 export const PROVIDER_LABELS: Record<Provider, string> = {
   manual: "Manual",
   xai: "Grok",
@@ -150,7 +152,7 @@ export const agentFormSchema = z.object({
   name: requiredText("a name", 120),
   role_summary: optionalText(1000),
   instructions: optionalText(20000),
-  provider: z.enum(SELECTABLE_PROVIDERS),
+  provider: z.enum(AGENT_PROVIDERS),
   model: optionalText(120),
   allowed_work_types: z.array(z.enum(WORK_TYPES)).min(1, "Pick at least one kind of work"),
   is_active: z.boolean(),

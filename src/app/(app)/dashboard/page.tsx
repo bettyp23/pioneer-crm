@@ -9,8 +9,12 @@ import { followUpBucket } from "@/features/follow-ups/schemas";
 import { listOpenFollowUps } from "@/features/follow-ups/server/queries";
 import { listLeads, listStages } from "@/features/leads/server/queries";
 import { ensureRoutineRuns, listDueRuns, listIssues } from "@/features/operations/server/queries";
+import { isOpen } from "@/features/chat/components/chat-thread";
+import { AUTHOR_LABELS, type Author } from "@/features/chat/schemas";
+import { listMessages } from "@/features/chat/server/queries";
 import { listPendingApprovals, listReadyTasks } from "@/features/projects/server/queries";
 import { formatIsoDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/format";
 import { formatMoney } from "@/lib/money";
 import { can } from "@/server/auth/permissions";
 import { requireMember } from "@/server/auth/session";
@@ -23,7 +27,7 @@ const UPCOMING_WIDGETS: { title: string; description: string; milestone: number 
 export default async function DashboardPage() {
   const { member } = await requireMember();
   const opsToday = await ensureRoutineRuns();
-  const [{ followUps, today }, leads, stages, readyTasks, approvals, dueRuns, openIssues] =
+  const [{ followUps, today }, leads, stages, readyTasks, approvals, dueRuns, openIssues, chat] =
     await Promise.all([
       listOpenFollowUps({ scope: "mine" }),
       listLeads(),
@@ -32,7 +36,11 @@ export default async function DashboardPage() {
       listPendingApprovals(),
       listDueRuns(opsToday),
       listIssues({ open: true }),
+      listMessages(50),
     ]);
+  const openSends = chat.filter(isOpen).length;
+  const replies = chat.filter((m) => m.author !== "owner").reverse();
+  const decisions = replies.filter((m) => m.kind === "needs_decision");
   const severeIssues = openIssues.filter((i) => i.severity === "high" || i.severity === "critical");
   const due = followUps.filter((f) => followUpBucket(f.due_on, today) !== "upcoming");
   const overdueCount = due.filter((f) => f.due_on < today).length;
@@ -46,6 +54,39 @@ export default async function DashboardPage() {
         title={`Welcome, ${member.displayName}`}
         description={`Today in ${member.workspaceName}`}
       />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            <h2>Pioneer</h2>
+          </CardTitle>
+          <CardDescription>
+            {openSends} in progress · {decisions.length} waiting for your decision.{" "}
+            <Link href="/pioneer" className="underline underline-offset-2">
+              Open the chat
+            </Link>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {replies.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No replies yet.</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {[...decisions, ...replies.filter((m) => m.kind !== "needs_decision")]
+                .slice(0, 3)
+                .map((m) => (
+                  <li key={m.id} className="py-2">
+                    <span className="text-muted-foreground block text-xs">
+                      {AUTHOR_LABELS[m.author as Author]} ·{" "}
+                      {formatDateTime(m.created_at, member.workspaceTimezone)}
+                      {m.kind === "needs_decision" ? " · needs your decision" : ""}
+                    </span>
+                    <span className="line-clamp-2">{m.body}</span>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>

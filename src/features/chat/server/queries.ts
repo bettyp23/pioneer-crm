@@ -27,3 +27,30 @@ export async function listConnectionBrakes() {
   if (error) throw new Error(`Failed to load connections (${error.code})`);
   return data;
 }
+
+// Sends per connection in the last hour (what the loop brake counts) and this month.
+export async function listConnectionUsage() {
+  const { supabase, member } = await requireMember();
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const [brakes, sends] = await Promise.all([
+    listConnectionBrakes(),
+    supabase
+      .from("job_dispatches")
+      .select("connection, dispatched_at")
+      .eq("workspace_id", member.workspaceId)
+      .gte("dispatched_at", monthStart.toISOString())
+      .limit(5000),
+  ]);
+  if (sends.error) throw new Error(`Failed to load sends (${sends.error.code})`);
+  const hourAgo = Date.now() - 60 * 60 * 1000;
+  return brakes.map((b) => {
+    const mine = sends.data.filter((s) => s.connection === b.connection);
+    return {
+      ...b,
+      lastHour: mine.filter((s) => new Date(s.dispatched_at).getTime() > hourAgo).length,
+      thisMonth: mine.length,
+    };
+  });
+}
