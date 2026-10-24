@@ -114,9 +114,14 @@ Role matrix (initial):
 - A pre-dispatch scanner flags emails, phone numbers, URLs with tokens, key-like strings,
   card-like numbers, and healthcare terms; flagged items need explicit override with a reason
   (audited).
-- Dispatch is manual in the M6 prototype (copy/export). Any future API integration must be
-  outbound-only from the server with an allowlisted payload, and requires a separate
-  security review and owner approval.
+- Dispatch is manual in M6 (copy prompt → Grok app or Claude → paste the reply back). Any future
+  API integration must be outbound-only from a worker with an allowlisted payload, must pass
+  `private.ai_budget_allows()` before spending and `private.require_approved_action()` before any
+  side effect, and requires a separate security review and owner approval.
+- Only read-only research may ever run without approval; sending, deploying, pricing and
+  signing always need an approved proposed action (D-20). Pricing and contracts: owner only.
+- Default context = client business information; contacts, notes, SOWs and invoices are opt-in
+  and always flagged (D-22).
 - Agent output is a proposal; a human accepts or rejects it. No agent output triggers writes
   automatically.
 - Development: no real client data, PHI, card data or secrets are pasted into AI coding

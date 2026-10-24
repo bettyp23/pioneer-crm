@@ -23,13 +23,12 @@ test.describe("as owner", () => {
       "Routines",
       "Invoices",
       "Reports",
+      "Work queue",
     ]) {
       await expect(nav.getByRole("link", { name })).toBeVisible();
     }
-    for (const name of ["Work queue"]) {
-      await expect(nav.getByRole("button", { name })).toBeDisabled();
-      await expect(nav.getByRole("link", { name })).toHaveCount(0);
-    }
+    // Every module is built (M6): no disabled entries remain.
+    await expect(nav.getByRole("button", { disabled: true })).toHaveCount(0);
     await page.screenshot({ path: "test-results/evidence/dashboard-owner.png", fullPage: true });
   });
 

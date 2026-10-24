@@ -70,7 +70,13 @@ select set_eq(
             ('overdue_tasks', 'SELECT'),
             ('routine_compliance', 'SELECT'),
             ('open_issues_by_severity', 'SELECT'),
-            ('receivables_by_status', 'SELECT') $$,
+            ('receivables_by_status', 'SELECT'),
+            ('agents', 'SELECT'),
+            ('ai_budgets', 'SELECT'),
+            ('agent_work_items', 'SELECT'),
+            ('proposed_actions', 'SELECT'),
+            ('ai_usage', 'SELECT'),
+            ('ai_spend_this_month', 'SELECT') $$,
   'authenticated has only the documented table privileges'
 );
 
