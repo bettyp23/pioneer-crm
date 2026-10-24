@@ -231,8 +231,8 @@ begin
   perform set_config('request.jwt.claims',
     json_build_object('sub', owner_id, 'role', 'authenticated', 'aal', 'aal2')::text, true);
   select id into c from public.clients where workspace_id = ws and name = 'Northwind Example Bakery';
-  select id into agent from public.agents where workspace_id = ws and key = 'client_desk';
-  update public.agents set instructions = 'Synthetic example: You are Client Desk for Pioneer Digital AI. Write warm, concise client messages. Never promise prices or dates.'
+  select id into agent from public.agents where workspace_id = ws and key = 'sales';
+  update public.agents set instructions = 'Synthetic example: You are the Sales Agent for Pioneer Digital AI. Write warm, concise client messages. Never promise prices or dates.'
     where id = agent;
 
   insert into public.agent_work_items (workspace_id, agent_id, client_id, work_type, title, instructions,
@@ -252,8 +252,32 @@ begin
     E'Hi Avery, thanks for the discovery call. Next we will share a short plan for online ordering. — Pioneer Digital AI', owner_id);
 
   insert into public.ai_usage (workspace_id, provider, work_item_id, cost_microusd, note, recorded_by)
-  values (ws, 'xai', w, 120000, 'Synthetic example cost', owner_id);
+  values (ws, 'openrouter', w, 120000, 'Synthetic example cost', owner_id);
 
   perform set_config('request.jwt.claims', '', true);
+end;
+$$;
+
+-- ── M7 demo jobs (synthetic; local only) ───────────────────────────────────
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  ops uuid;
+  j uuid;
+begin
+  select id into ops from public.agents where workspace_id = ws and key = 'operations';
+  insert into public.jobs (workspace_id, kind, idempotency_key, agent_id, status, attempts, finished_at, started_at)
+  values (ws, 'report.weekly_summary', 'demo-week-1', null, 'succeeded', 1, now() - interval '2 days', now() - interval '2 days');
+  insert into public.jobs (workspace_id, kind, idempotency_key, agent_id, status, attempts, max_attempts,
+    last_error, finished_at, started_at)
+  values (ws, 'agent.run', 'demo-stalled-review', ops, 'dead', 3, 3,
+    'Synthetic example: model provider returned 503 three times', now() - interval '1 day', now() - interval '1 day')
+  returning id into j;
+  insert into public.job_attempts (workspace_id, job_id, attempt, worker, started_at, finished_at, outcome, error)
+  select ws, j, n, 'vps-worker-1', now() - interval '1 day', now() - interval '1 day',
+    case when n = 3 then 'dead' else 'retry' end, 'Synthetic example: model provider returned 503'
+  from generate_series(1, 3) n;
+  insert into public.jobs (workspace_id, kind, idempotency_key, agent_id)
+  values (ws, 'agent.run', 'demo-daily-stalled-tasks', ops);
 end;
 $$;

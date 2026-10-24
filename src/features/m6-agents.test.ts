@@ -54,10 +54,11 @@ describe("money in micro-dollars", () => {
     expect(formatMicroUsd(120_000)).toBe("$0.12");
     expect(formatMicroUsd(4_200)).toBe("$0.0042");
     expect(
-      usageSchema.parse({ provider: "xai", work_item_id: "", cost: "0.42", note: "" }).cost,
+      usageSchema.parse({ provider: "openrouter", work_item_id: "", cost: "0.42", note: "" }).cost,
     ).toBe(420_000);
     expect(
-      usageSchema.safeParse({ provider: "xai", work_item_id: "", cost: "-1", note: "" }).success,
+      usageSchema.safeParse({ provider: "openrouter", work_item_id: "", cost: "-1", note: "" })
+        .success,
     ).toBe(false);
     expect(budgetSchema.parse({ provider: "anthropic", cap: "50" }).cap).toBe(5000);
   });

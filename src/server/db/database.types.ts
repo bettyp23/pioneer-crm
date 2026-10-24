@@ -1197,6 +1197,149 @@ export type Database = {
           },
         ];
       };
+      job_attempts: {
+        Row: {
+          attempt: number;
+          error: string | null;
+          finished_at: string | null;
+          id: number;
+          job_id: string;
+          outcome: string;
+          started_at: string;
+          worker: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempt: number;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: never;
+          job_id: string;
+          outcome?: string;
+          started_at?: string;
+          worker: string;
+          workspace_id: string;
+        };
+        Update: {
+          attempt?: number;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: never;
+          job_id?: string;
+          outcome?: string;
+          started_at?: string;
+          worker?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_attempts_job_fkey";
+            columns: ["workspace_id", "job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["workspace_id", "id"];
+          },
+        ];
+      };
+      jobs: {
+        Row: {
+          agent_id: string | null;
+          attempts: number;
+          created_at: string;
+          enqueued_by: string | null;
+          finished_at: string | null;
+          id: string;
+          idempotency_key: string;
+          kind: string;
+          last_error: string | null;
+          locked_by: string | null;
+          locked_until: string | null;
+          max_attempts: number;
+          payload: NonNullable<Json>;
+          priority: number;
+          result: Json | null;
+          run_after: string;
+          started_at: string | null;
+          status: Database["public"]["Enums"]["job_status"];
+          timeout_seconds: number;
+          updated_at: string;
+          work_item_id: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_id?: string | null;
+          attempts?: number;
+          created_at?: string;
+          enqueued_by?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          idempotency_key: string;
+          kind: string;
+          last_error?: string | null;
+          locked_by?: string | null;
+          locked_until?: string | null;
+          max_attempts?: number;
+          payload?: NonNullable<Json>;
+          priority?: number;
+          result?: Json | null;
+          run_after?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["job_status"];
+          timeout_seconds?: number;
+          updated_at?: string;
+          work_item_id?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          agent_id?: string | null;
+          attempts?: number;
+          created_at?: string;
+          enqueued_by?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          kind?: string;
+          last_error?: string | null;
+          locked_by?: string | null;
+          locked_until?: string | null;
+          max_attempts?: number;
+          payload?: NonNullable<Json>;
+          priority?: number;
+          result?: Json | null;
+          run_after?: string;
+          started_at?: string | null;
+          status?: Database["public"]["Enums"]["job_status"];
+          timeout_seconds?: number;
+          updated_at?: string;
+          work_item_id?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jobs_agent_fkey";
+            columns: ["workspace_id", "agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "jobs_work_item_fkey";
+            columns: ["workspace_id", "work_item_id"];
+            isOneToOne: false;
+            referencedRelation: "agent_work_items";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "jobs_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       leads: {
         Row: {
           archived_at: string | null;
@@ -2218,6 +2361,9 @@ export type Database = {
       };
       workspaces: {
         Row: {
+          ai_pause_reason: string | null;
+          ai_paused_at: string | null;
+          ai_paused_by: string | null;
           created_at: string;
           id: string;
           name: string;
@@ -2227,6 +2373,9 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          ai_pause_reason?: string | null;
+          ai_paused_at?: string | null;
+          ai_paused_by?: string | null;
           created_at?: string;
           id?: string;
           name: string;
@@ -2235,6 +2384,9 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          ai_pause_reason?: string | null;
+          ai_paused_at?: string | null;
+          ai_paused_by?: string | null;
           created_at?: string;
           id?: string;
           name?: string;
@@ -2435,6 +2587,7 @@ export type Database = {
     };
     Functions: {
       blueprint_version_problems: { Args: { p_version_id: string }; Returns: string[] };
+      cancel_job: { Args: { p_id: string }; Returns: undefined };
       create_draft_version: {
         Args: { p_blueprint_id: string; p_from_version_id?: string };
         Returns: string;
@@ -2458,6 +2611,19 @@ export type Database = {
           p_note?: string;
         };
         Returns: undefined;
+      };
+      enqueue_job: {
+        Args: {
+          p_agent_id?: string;
+          p_idempotency_key: string;
+          p_kind: string;
+          p_max_attempts?: number;
+          p_payload?: Json;
+          p_run_after?: string;
+          p_work_item_id?: string;
+          p_workspace_id: string;
+        };
+        Returns: string;
       };
       generate_project: {
         Args: {
@@ -2487,6 +2653,11 @@ export type Database = {
       };
       request_approval: { Args: { p_task_id: string }; Returns: string };
       retire_blueprint_version: { Args: { p_version_id: string }; Returns: undefined };
+      retry_job: { Args: { p_id: string }; Returns: undefined };
+      set_ai_paused: {
+        Args: { p_paused: boolean; p_reason?: string; p_workspace_id: string };
+        Returns: undefined;
+      };
       set_input_request_status: {
         Args: {
           p_drive_url?: string;
@@ -2543,6 +2714,7 @@ export type Database = {
       invoice_system: "quickbooks" | "stripe" | "wave" | "xero" | "freshbooks" | "other";
       issue_severity: "low" | "medium" | "high" | "critical";
       issue_status: "open" | "triaged" | "in_progress" | "resolved" | "wont_fix";
+      job_status: "queued" | "running" | "succeeded" | "failed" | "dead" | "cancelled";
       member_status: "active" | "suspended";
       project_status: "active" | "on_hold" | "completed" | "cancelled";
       routine_cadence: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
@@ -2690,6 +2862,7 @@ export const Constants = {
       invoice_system: ["quickbooks", "stripe", "wave", "xero", "freshbooks", "other"],
       issue_severity: ["low", "medium", "high", "critical"],
       issue_status: ["open", "triaged", "in_progress", "resolved", "wont_fix"],
+      job_status: ["queued", "running", "succeeded", "failed", "dead", "cancelled"],
       member_status: ["active", "suspended"],
       project_status: ["active", "on_hold", "completed", "cancelled"],
       routine_cadence: ["daily", "weekly", "monthly", "quarterly", "yearly"],

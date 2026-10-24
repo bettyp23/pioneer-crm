@@ -104,3 +104,29 @@ export async function getUsageSummary() {
   if (ledger.error) throw new Error(`Failed to load usage (${ledger.error.code})`);
   return { spend: spend.data, ledger: ledger.data };
 }
+
+export async function getAiPauseState() {
+  const { supabase, member } = await requireMember();
+  const { data, error } = await supabase
+    .from("workspaces")
+    .select("ai_paused_at, ai_pause_reason")
+    .eq("id", member.workspaceId)
+    .single();
+  if (error) throw new Error(`Failed to load agent status (${error.code})`);
+  return { pausedAt: data.ai_paused_at, reason: data.ai_pause_reason };
+}
+
+// Payloads and results are not readable through the API; the list shows status only.
+export async function listJobs() {
+  const { supabase, member } = await requireMember();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select(
+      "id, kind, status, attempts, max_attempts, run_after, last_error, finished_at, created_at, agent:agents!jobs_agent_fkey(id, name)",
+    )
+    .eq("workspace_id", member.workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw new Error(`Failed to load jobs (${error.code})`);
+  return data;
+}

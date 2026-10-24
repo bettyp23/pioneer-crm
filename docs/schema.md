@@ -297,7 +297,7 @@ Re-scoped by D-19 (see docs/milestone-6-plan.md). As built:
 | `agents` | The eight vision roles seeded per workspace (trigger on new workspaces); `provider`, `model`, saved `instructions`, `allowed_work_types`; no credentials. Owner/admin edit. |
 | `agent_work_items` | Draft → ready → dispatched → returned → accepted/rejected (+ cancelled) via `transition_work_item`; content frozen after ready (trigger + RLS); `context_snapshot` + `sensitivity_flags` built server-side; flagged items need `override_reason`; dispatch and review owner/admin; `version` for concurrency. |
 | `proposed_actions` | Approval Center: send_email, deploy, price_quote, sign_contract, publish_content, other. No update grants; `decide_action` (owner/admin; pricing and contracts owner only), `mark_action_executed` only after approval via `private.require_approved_action` — the gate future connectors must call. |
-| `ai_budgets` | Monthly cap per provider in cents ($50 Anthropic, $50 xAI seeded); owner edits. |
+| `ai_budgets` | Monthly cap per provider in cents ($50 Anthropic, $50 xAI seeded — xAI replaced by OpenRouter in M7); owner edits. |
 | `ai_usage` | Append-only cost ledger in micro-USD. `ai_spend_this_month` view (workspace-local month) and `private.ai_budget_allows()` for connectors. |
 
 Original M6 proposal (kept for reference):
@@ -306,6 +306,22 @@ Original M6 proposal (kept for reference):
 |---|---|---|
 | `agents` | name, kind (`grok_bot`,`other`), description, is_active, allowed_work_types text[] | no auth identity |
 | `agent_work_items` | agent_id, project_task_id?, work_type, title, instructions, context_snapshot jsonb, sensitivity_flags jsonb, status (`draft`,`ready`,`dispatched`,`returned`,`accepted`,`rejected`,`cancelled`), prepared_by, dispatched_by, dispatched_at, output_text, output_url, returned_at, reviewed_by, reviewed_at, review_note, version | status changes only via RPC; `context_snapshot` frozen at `ready` (trigger) |
+
+## 8a. Milestone 7 — Agent Center foundation (as built)
+
+Migration `20261022000100_agent_center_foundation.sql`; tests
+`supabase/tests/010_agent_center_foundation.test.sql`. Decisions D-24…D-27; design context in
+docs/os3/.
+
+| Object | Notes |
+|---|---|
+| `workspaces.ai_paused_at/_by/ai_pause_reason` | Kill switch. Written only by `set_ai_paused(ws, paused, reason)` (owner + MFA, audited `ai.paused`/`ai.resumed`). `private.ai_is_paused` fails closed. Blocks dispatch (`transition_work_item`), agent job claims and heartbeats, and `ai_budget_allows`. |
+| `agents` | Roster replaced by the eight 3.0 roles (`operations`, `sales`, `client_onboarding`, `development`, `qa_security`, `marketing_seo`, `client_success`, `finance_admin`); M6 records renamed in place, `research`/`setup` retired. Check `agents_provider_supported` refuses `xai`/`perplexity`. Dispatch also requires an active agent. |
+| `ai_budgets` | Seeds Anthropic $50 + OpenRouter $50 (xAI row moved to OpenRouter). Same provider check. |
+| `ai_usage` | `ai_usage_provider_supported` added `NOT VALID`: history kept, new xAI/Perplexity rows refused. |
+| `jobs` | Durable queue: `kind` (`area.action`; `agent.*` needs `agent_id`), unique `(workspace_id, kind, idempotency_key)`, `payload`/`result` (not granted to `authenticated`), status queued/running/succeeded/failed/dead/cancelled, attempts/max_attempts, `run_after`, lease (`locked_by`, `locked_until`, `timeout_seconds`), redacted `last_error`. No direct writes; `enqueue_job` (admin, idempotent, audited), `retry_job`, `cancel_job` (admin, audited). |
+| `job_attempts` | One row per claim with outcome (running, succeeded, retry, failed, dead, timed_out, cancelled) and redacted error. Viewer-readable. |
+| schema `worker`, role `pioneer_worker` | `claim_jobs(worker, kinds[], limit)` (reaps expired leases, SKIP LOCKED, honours kill switch/agent active), `heartbeat` (false = stop), `complete_job`, `fail_job(…, retryable)` (backoff 30 s·2ⁿ ≤ 1 h; dead-letter; audited), `reap_expired`. Role is `NOLOGIN` and has no table privileges; login is enabled per environment by an operator. |
 
 ## 9. Grants summary
 

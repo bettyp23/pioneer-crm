@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import {
   agentFormSchema,
   PROVIDER_LABELS,
-  PROVIDERS,
+  SELECTABLE_PROVIDERS,
   WORK_TYPE_LABELS,
   WORK_TYPES,
   type AgentFormInput,
@@ -67,7 +67,7 @@ export function AgentForm({
           <Field>
             <FieldLabel htmlFor="provider">Runs on</FieldLabel>
             <NativeSelect id="provider" {...form.register("provider")}>
-              {PROVIDERS.map((p) => (
+              {SELECTABLE_PROVIDERS.map((p) => (
                 <option key={p} value={p}>
                   {PROVIDER_LABELS[p]}
                 </option>
@@ -82,14 +82,18 @@ export function AgentForm({
             <FieldLabel htmlFor="instructions">Saved instructions</FieldLabel>
             <Textarea id="instructions" rows={10} {...form.register("instructions")} />
             <FieldDescription>
-              Paste this bot&apos;s instructions from the Grok app. They start every prompt you
-              copy. Don&apos;t include passwords or keys.
+              The role&apos;s standing instructions. They start every prompt, and Hermes will use
+              them once it is connected. Don&apos;t include passwords or keys.
             </FieldDescription>
             <FieldError errors={[errors.instructions]} />
           </Field>
           <Field>
             <FieldLabel htmlFor="model">Model (optional)</FieldLabel>
-            <Input id="model" placeholder="e.g. grok-4" {...form.register("model")} />
+            <Input
+              id="model"
+              placeholder="Leave empty to use the default"
+              {...form.register("model")}
+            />
           </Field>
           <Field orientation="horizontal" className="items-center self-end">
             <input

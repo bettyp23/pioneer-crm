@@ -19,6 +19,8 @@ const PERMISSIONS = {
   "audit.read": ["owner", "admin"],
   "records.hard_delete": ["owner"],
   "agents.dispatch": ["owner", "admin"],
+  "agents.kill_switch": ["owner"],
+  "jobs.manage": ["owner", "admin"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

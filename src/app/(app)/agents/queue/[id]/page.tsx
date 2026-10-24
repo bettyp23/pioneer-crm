@@ -104,8 +104,8 @@ export default async function WorkItemPage({ params }: PageProps<"/agents/queue/
       <section className="flex flex-col gap-2">
         <h2 className="font-medium">Prompt</h2>
         <p className="text-muted-foreground text-xs">
-          Agent instructions + task + the frozen context. Copy it into the Grok app or Claude when
-          the item is ready.
+          Agent instructions + task + the frozen context. Until Hermes is connected, copy it into
+          Claude or ChatGPT when the item is ready.
         </p>
         <pre className="bg-muted/50 max-h-96 overflow-auto rounded-md p-3 text-xs whitespace-pre-wrap">
           {prompt}

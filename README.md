@@ -8,7 +8,8 @@ Pioneer OS is a private, internal CRM and service-operations platform. Start wit
 - [Schema](docs/schema.md)
 - [Security](docs/security.md)
 - [Decisions and open questions](docs/decisions.md)
-- [Milestone 1 plan](docs/milestone-1-plan.md) · [Milestone 2 plan](docs/milestone-2-plan.md) · [Milestone 3 plan](docs/milestone-3-plan.md) · [Milestone 4 plan](docs/milestone-4-plan.md) · [Milestone 5 plan](docs/milestone-5-plan.md) · [Milestone 6 plan](docs/milestone-6-plan.md)
+- [Milestone 1 plan](docs/milestone-1-plan.md) · [Milestone 2 plan](docs/milestone-2-plan.md) · [Milestone 3 plan](docs/milestone-3-plan.md) · [Milestone 4 plan](docs/milestone-4-plan.md) · [Milestone 5 plan](docs/milestone-5-plan.md) · [Milestone 6 plan](docs/milestone-6-plan.md) · [Milestone 7 plan](docs/milestone-7-plan.md)
+- **Pioneer OS 3.0** (Hermes, integrations, roadmap): [overview](docs/os3/README.md) · [setup and purchasing guide](docs/os3/PIONEER_OS_SETUP_GUIDE.md)
 - Runbooks: [local development](docs/runbooks/local-development.md) ·
   [bootstrap the owner](docs/runbooks/bootstrap-owner.md)
 

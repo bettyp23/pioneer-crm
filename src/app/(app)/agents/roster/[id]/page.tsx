@@ -44,7 +44,11 @@ export default async function AgentPage({ params }: PageProps<"/agents/roster/[i
           name: agent.name,
           role_summary: agent.role_summary ?? "",
           instructions: agent.instructions ?? "",
-          provider: agent.provider,
+          // The database refuses retired providers for agents (D-24).
+          provider:
+            agent.provider === "xai" || agent.provider === "perplexity"
+              ? "openrouter"
+              : agent.provider,
           model: agent.model ?? "",
           allowed_work_types: agent.allowed_work_types as WorkType[],
           is_active: agent.is_active,

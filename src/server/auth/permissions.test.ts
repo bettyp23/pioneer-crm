@@ -18,6 +18,8 @@ const EXPECTED: Record<Permission, Role[]> = {
   "audit.read": ["owner", "admin"],
   "records.hard_delete": ["owner"],
   "agents.dispatch": ["owner", "admin"],
+  "agents.kill_switch": ["owner"],
+  "jobs.manage": ["owner", "admin"],
 };
 
 describe("permission matrix", () => {
