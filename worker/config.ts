@@ -5,12 +5,13 @@ import { z } from "zod";
 // Worker settings, from .env.worker (never from .env.local, the database or the app). Secrets stay in this
 // process: they are never logged, stored or put in a message.
 const schema = z.object({
-  WORKER_DATABASE_URL: z
-    .string()
-    .regex(
-      /^postgres(ql)?:\/\/pioneer_worker:/,
-      "must log in as pioneer_worker, never as postgres",
-    ),
+  WORKER_DATABASE_URL: z.string().regex(
+    // Hosted Supabase poolers name the user "pioneer_worker.<project-ref>".
+    /^postgres(ql)?:\/\/pioneer_worker(\.[a-z0-9]+)?:[^?]+$/,
+    "must log in as pioneer_worker (never as postgres) and carry no ?options",
+  ),
+  // Certificate of the hosted database (Supabase → Database settings → SSL); required off this Mac.
+  WORKER_DATABASE_CA_FILE: z.string().min(1).optional(),
   WORKER_NAME: z.string().min(1).max(100).optional(),
   CLAUDE_ROUTINE_URL: z
     .string()
@@ -28,7 +29,7 @@ const schema = z.object({
 });
 
 export type WorkerConfig = {
-  databaseUrl: string;
+  database: { url: string; caFile: string | null };
   workerName: string;
   claude: { url: string; token: string } | null;
   grok: { url: string; key: string } | null;
@@ -43,8 +44,15 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     throw new Error(`Worker setting ${issue?.path.join(".")} is invalid: ${issue?.message}`);
   }
   const e = parsed.data;
+  const local = ["127.0.0.1", "localhost", "[::1]"].includes(
+    new URL(e.WORKER_DATABASE_URL).hostname,
+  );
+  if (!local && !e.WORKER_DATABASE_CA_FILE) {
+    // Never talk to a hosted database without verifying its certificate.
+    throw new Error("Worker setting WORKER_DATABASE_CA_FILE is required for a hosted database");
+  }
   return {
-    databaseUrl: e.WORKER_DATABASE_URL,
+    database: { url: e.WORKER_DATABASE_URL, caFile: local ? null : e.WORKER_DATABASE_CA_FILE! },
     workerName: e.WORKER_NAME ?? `mac-${hostname().split(".")[0]}`.slice(0, 100),
     claude:
       e.CLAUDE_ROUTINE_URL && e.CLAUDE_ROUTINE_TOKEN

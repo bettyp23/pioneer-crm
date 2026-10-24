@@ -21,7 +21,8 @@
     "db:types": "supabase gen types --lang typescript --local --schema public > src/server/db/database.types.ts && prettier --write src/server/db/database.types.ts",
     "bootstrap:owner": "tsx --env-file=.env.local scripts/bootstrap-owner.ts",
     "worker": "tsx --env-file=.env.worker worker/index.ts",
-    "worker:setup-local": "tsx scripts/worker-local-setup.ts"
+    "worker:setup-local": "tsx scripts/worker-local-setup.ts",
+    "worker:setup-hosted": "tsx scripts/worker-hosted-setup.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

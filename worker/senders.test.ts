@@ -91,3 +91,34 @@ describe("loadConfig", () => {
     );
   });
 });
+
+describe("loadConfig: hosted database", () => {
+  const hosted =
+    "postgresql://pioneer_worker.abcdefghijklmnopqrst:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres";
+
+  it("accepts the pooler's pioneer_worker.<project-ref> login with a certificate", () => {
+    const cfg = loadConfig({ WORKER_DATABASE_URL: hosted, WORKER_DATABASE_CA_FILE: "/ca.crt" });
+    expect(cfg.database).toEqual({ url: hosted, caFile: "/ca.crt" });
+  });
+
+  it("refuses a hosted database without a certificate to verify", () => {
+    expect(() => loadConfig({ WORKER_DATABASE_URL: hosted })).toThrow(/WORKER_DATABASE_CA_FILE/);
+  });
+
+  it("refuses connection options in the URL (TLS is configured by the worker)", () => {
+    expect(() =>
+      loadConfig({
+        WORKER_DATABASE_URL: `${hosted}?sslmode=disable`,
+        WORKER_DATABASE_CA_FILE: "/ca.crt",
+      }),
+    ).toThrow(/WORKER_DATABASE_URL/);
+  });
+
+  it("needs no certificate for the local database", () => {
+    const local = "postgresql://pioneer_worker:pw@127.0.0.1:54322/postgres";
+    expect(loadConfig({ WORKER_DATABASE_URL: local }).database).toEqual({
+      url: local,
+      caFile: null,
+    });
+  });
+});

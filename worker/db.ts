@@ -35,8 +35,13 @@ export type WorkerDb = {
   close(): Promise<void>;
 };
 
-export function connect(databaseUrl: string): WorkerDb {
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 2 });
+// A hosted database is always reached over TLS with its certificate verified (ca = its CA).
+export function connect(databaseUrl: string, ca: string | null = null): WorkerDb {
+  const pool = new pg.Pool({
+    connectionString: databaseUrl,
+    ssl: ca ? { ca, rejectUnauthorized: true } : false,
+    max: 2,
+  });
   const one = async <T>(sql: string, params: unknown[]): Promise<T> =>
     (await pool.query(sql, params)).rows[0]?.r as T;
   return {

@@ -30,7 +30,11 @@ async function main() {
   const kept = current
     .split("\n")
     .filter(
-      (line) => !line.startsWith("WORKER_DATABASE_URL=") && line !== "# Pioneer worker (local)",
+      (line) =>
+        !line.startsWith("WORKER_DATABASE_URL=") &&
+        !line.startsWith("WORKER_DATABASE_CA_FILE=") &&
+        line !== "# Pioneer worker (local)" &&
+        line !== "# Pioneer worker (hosted database)",
     );
   while (kept.length && kept.at(-1) === "") kept.pop();
   await writeFile(

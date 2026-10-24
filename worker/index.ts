@@ -2,6 +2,8 @@
 // Every 5 s: claim sends and make them (at most once each). Every 60 s: read the results tab,
 // match replies, and expire sends whose reply is overdue. Stops cleanly on Ctrl+C.
 // It never runs agent code or shell commands, and logs no secrets, codes or message text.
+import { readFile } from "node:fs/promises";
+
 import { loadConfig } from "./config";
 import { connect } from "./db";
 import { handleSend, SEND_KINDS, sendersFor } from "./handlers";
@@ -16,13 +18,15 @@ const log = (event: string, details: Record<string, unknown> = {}) =>
 
 async function main() {
   const cfg = loadConfig();
-  const db = connect(cfg.databaseUrl);
+  const ca = cfg.database.caFile ? await readFile(cfg.database.caFile, "utf8") : null;
+  const db = connect(cfg.database.url, ca);
   const send = sendersFor(cfg);
   const sheet = cfg.sheet
     ? new SheetReader(await loadServiceAccount(cfg.sheet.keyFile), cfg.sheet.sheetId, cfg.sheet.tab)
     : null;
   log("worker.started", {
     worker: cfg.workerName,
+    database: ca ? "hosted (TLS verified)" : "local",
     claude: cfg.claude !== null,
     grok: cfg.grok !== null,
     sheet: sheet !== null,
