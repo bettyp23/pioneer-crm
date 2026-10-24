@@ -1,6 +1,6 @@
 # Pioneer OS — MVP Schema
 
-Status: **Proposed — not yet migrated** · Last updated: 2026-10-19
+Status: **M1 as-built** (§3, §9) · later sections proposed · Last updated: 2026-10-20
 
 This is the target schema across milestones. Each milestone migrates only its own tables.
 The SQL in `supabase/migrations/` is authoritative once it exists; this document explains
@@ -65,34 +65,47 @@ erDiagram
   project_tasks ||--o{ agent_work_items : delegates
 ```
 
-## 3. Milestone 1 — foundation
+## 3. Milestone 1 — foundation (as built)
+
+Migrations: `20261020000100_extensions_and_private.sql`, `20261020000200_workspaces.sql`,
+`20261020000300_audit.sql`. Tests: `supabase/tests/*.test.sql` (61 pgTAP assertions).
 
 ### `workspaces`
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid PK | |
-| name | text not null | check non-blank |
+| name | text not null | `workspaces_name_not_blank`: 1–120 chars after trim |
 | slug | text not null unique | `^[a-z0-9-]{2,40}$` |
-| timezone | text not null default `'America/New_York'` | IANA name (D-11) |
+| timezone | text not null default `'America/New_York'` | IANA name (D-11); `workspaces_timezone_valid` via `private.is_valid_timezone` |
 | created_at, updated_at | timestamptz | |
 
 ### `profiles`
 | Column | Type | Notes |
 |---|---|---|
 | user_id | uuid PK → `auth.users(id)` on delete cascade | |
-| display_name | text not null | |
+| display_name | text not null | `profiles_display_name_not_blank`: 1–120 chars |
 | created_at, updated_at | timestamptz | |
 
 ### `workspace_members`
 | Column | Type | Notes |
 |---|---|---|
 | workspace_id | uuid → workspaces | PK part |
-| user_id | uuid → auth.users | PK part |
+| user_id | uuid → `profiles(user_id)` on delete restrict | PK part; via profiles so the roster can be listed with names |
 | role | `workspace_role` enum: `owner`, `admin`, `member`, `viewer` | |
 | status | `member_status` enum: `active`, `suspended` | |
 | created_at, updated_at | timestamptz | |
 
-Trigger `prevent_last_owner_removal`: rejects delete/demote/suspend of the last active owner.
+Trigger `prevent_last_owner_removal`: rejects delete/demote/suspend of the last active owner
+(SQLSTATE `23514`, constraint `workspace_members_last_owner`). It locks the workspace row so
+concurrent owner changes serialize.
+
+RLS (all with a restrictive `aal2` policy):
+
+| Table | select | insert | update | delete |
+|---|---|---|---|---|
+| `workspaces` | viewer+ | — (bootstrap script only) | owner (`name`, `timezone` columns) | — |
+| `profiles` | self or co-member (`private.shares_workspace`) | — | self (`display_name`) | — |
+| `workspace_members` | viewer+ | owner | owner (`role`, `status`) | owner |
 
 ### `audit_events` (append-only)
 | Column | Type | Notes |
@@ -101,7 +114,7 @@ Trigger `prevent_last_owner_removal`: rejects delete/demote/suspend of the last 
 | workspace_id | uuid → workspaces | |
 | occurred_at | timestamptz default now() | |
 | actor_type | `actor_type` enum: `user`, `system`, `agent` | |
-| actor_user_id | uuid null → auth.users | defaulted from `auth.uid()` |
+| actor_user_id | uuid null → auth.users (no ON DELETE action) | set from `auth.uid()` by `log_event` |
 | actor_agent_id | uuid null → agents (added M6) | |
 | action | text not null | e.g. `client.updated`, `blueprint_version.published` |
 | entity_type | text not null | table name |
@@ -115,12 +128,24 @@ Trigger `prevent_last_owner_removal`: rejects delete/demote/suspend of the last 
 - `SELECT` for owner/admin of the workspace.
 - Sensitive columns are excluded from `changes` by a per-table allowlist.
 - Index `(workspace_id, occurred_at desc)` and `(entity_type, entity_id)`.
+- Triggers `prevent_audit_mutation` reject UPDATE/DELETE/TRUNCATE for every role, including
+  `postgres`.
+- M1 audited tables: `workspaces` (insert/update of `name`, `slug`, `timezone`) and
+  `workspace_members` (insert/update/delete of `user_id`, `role`, `status`). Actions:
+  `workspace.created|updated`, `workspace_member.created|updated|deleted`. Writes without a
+  user JWT (bootstrap script, seed) are `system` events.
 
 ### Helper functions (`private` schema)
 - `private.role_rank(workspace_role) → int`
 - `private.has_role(ws uuid, min_role workspace_role) → boolean` — `security definer`,
   `stable`, `search_path=''`; checks active membership for `(select auth.uid())`.
 - `private.is_mfa() → boolean` — `(select auth.jwt()->>'aal') = 'aal2'`.
+- `private.shares_workspace(other_user uuid) → boolean` — `security definer`; caller and
+  `other_user` are both members of a common workspace (profile visibility).
+- `private.is_valid_timezone(text) → boolean` — used by `workspaces_timezone_valid`.
+- `private.prevent_last_owner_removal()`, `private.audit_row_change()`,
+  `private.log_event(...)`, `private.prevent_audit_mutation()`.
+- `bump_version()` is created in M1 but first used in M4.
 - `private.set_updated_at()`, `private.bump_version()` triggers.
 
 ## 4. Milestone 2 — clients and pipeline

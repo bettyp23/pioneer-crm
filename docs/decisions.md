@@ -1,7 +1,7 @@
 # Pioneer OS — Decisions and Open Questions
 
 Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless you object) ·
-**ACCEPTED**. Each entry gives a recommendation. Last updated: 2026-10-19.
+**ACCEPTED**. Each entry gives a recommendation. Last updated: 2026-10-20.
 
 ## Needs owner approval before or during Milestone 1
 
@@ -15,6 +15,7 @@ Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless y
 | D-12 | Node.js version | Local Node is 20.14 (end-of-life since April 2026). Standardize on Node 24 LTS via `.nvmrc` and Vercel project setting. | ACCEPTED 2026-10-19 |
 | D-13 | Production domain | Needed for auth redirect URLs and CSP (e.g., `os.<your-domain>`). Can be decided by M7; staging uses the Vercel URL. | OPEN |
 | D-14 | Supabase/Vercel/GitHub provisioning | M1 runs fully local. Creating the staging Supabase project and linking Vercel are infrastructure actions I will not take without your go-ahead. | OPEN |
+| D-18 | Next.js Cache Components | Next 16.4 scaffolds with `cacheComponents: true`. Every Pioneer OS page is private and per-user, and the nonce-based CSP needs request-time rendering, so it is **off** (`next.config.ts`) and the root layout calls `connection()`. Revisit when Next makes it mandatory (announced for the next major). | PROPOSED (M1) |
 
 ## Needed before later milestones
 
@@ -43,3 +44,11 @@ Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless y
 - Member invitation flow is deferred; additional users would be provisioned by script.
 - No workspace switcher (single workspace).
 - No client portal.
+- No in-app MFA factor reset or password change yet; recovery via the Supabase dashboard
+  (docs/runbooks/bootstrap-owner.md).
+- Users with audit history cannot be deleted (audit rows are immutable and reference them);
+  suspend the membership instead. Workspaces cannot be deleted for the same reason.
+- Members list shows display names only; emails live in Supabase Auth and are not exposed
+  to the app's API role.
+- Changes made directly in the `auth` schema (e.g., deleting an MFA factor in the dashboard)
+  are not in the Pioneer OS audit log.
