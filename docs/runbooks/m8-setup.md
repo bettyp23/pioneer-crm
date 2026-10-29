@@ -110,3 +110,27 @@ saying why, then stop.
 
 Pioneer (Claude) only sees your message, not Pioneer's records. Mention the client and anything
 it needs in the message itself.
+
+## 5. Results folder (replaces the results tab, 2026-10-29)
+
+Step 0 showed that the Drive connections of Michael Scott and the Claude task can only replace a
+whole sheet, not add one row, so replies now arrive as **one new file per reply** in the Drive
+folder **Pioneer Results** (next to the Agency Dashboard; shared with `pioneer-sheet-reader` as
+Viewer). Neither sender needs edit access to any existing file. The worker reads files changed in
+the last 3 days (Google Docs, `.txt`, `.json`; up to 100 KB) and still accepts rows in the
+Pioneer Results tab if someone types one by hand. Same checks as before: job ID, one-time code
+and sender must match an open send.
+
+File name: the job ID. Content:
+
+```
+job_id: <copied exactly>
+code: <copied exactly>
+from: michael_scott            (or pioneer_brain)
+kind: result                   (michael_scott: result or needs_decision; pioneer_brain: answer or route)
+client: <client name or empty>
+text: <the result, answer, task or question; may span several lines>
+```
+
+Settings: `AGENCY_RESULTS_FOLDER_ID` in `.env.worker`. The Google Cloud project needs both the
+**Google Sheets API** and the **Google Drive API** enabled.

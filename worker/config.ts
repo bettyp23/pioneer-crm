@@ -26,6 +26,11 @@ const schema = z.object({
     .regex(/^[A-Za-z0-9_-]{20,}$/)
     .optional(),
   AGENCY_SHEET_TAB: z.string().min(1).max(100).default("Pioneer Results"),
+  // The shared "Pioneer Results" Drive folder: one new file per reply.
+  AGENCY_RESULTS_FOLDER_ID: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{10,}$/)
+    .optional(),
 });
 
 export type WorkerConfig = {
@@ -33,7 +38,9 @@ export type WorkerConfig = {
   workerName: string;
   claude: { url: string; token: string } | null;
   grok: { url: string; key: string } | null;
-  sheet: { keyFile: string; sheetId: string; tab: string } | null;
+  googleKeyFile: string | null;
+  sheet: { sheetId: string; tab: string } | null;
+  folder: { folderId: string } | null;
 };
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): WorkerConfig {
@@ -62,9 +69,14 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       e.GROK_WEBHOOK_URL && e.GROK_WEBHOOK_KEY
         ? { url: e.GROK_WEBHOOK_URL, key: e.GROK_WEBHOOK_KEY }
         : null,
+    googleKeyFile: e.GOOGLE_SHEETS_KEY_FILE ?? null,
     sheet:
       e.GOOGLE_SHEETS_KEY_FILE && e.AGENCY_SHEET_ID
-        ? { keyFile: e.GOOGLE_SHEETS_KEY_FILE, sheetId: e.AGENCY_SHEET_ID, tab: e.AGENCY_SHEET_TAB }
+        ? { sheetId: e.AGENCY_SHEET_ID, tab: e.AGENCY_SHEET_TAB }
+        : null,
+    folder:
+      e.GOOGLE_SHEETS_KEY_FILE && e.AGENCY_RESULTS_FOLDER_ID
+        ? { folderId: e.AGENCY_RESULTS_FOLDER_ID }
         : null,
   };
 }

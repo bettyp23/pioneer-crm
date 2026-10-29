@@ -8,7 +8,8 @@ import { loadConfig } from "./config";
 import { connect } from "./db";
 import { handleSend, SEND_KINDS, sendersFor } from "./handlers";
 import { processRows } from "./results";
-import { loadServiceAccount, SheetReader } from "./sheet";
+import { FolderReader } from "./folder";
+import { GoogleAuth, loadServiceAccount, SheetReader } from "./sheet";
 
 const SEND_EVERY_MS = 5_000;
 const POLL_EVERY_MS = 60_000;
@@ -21,17 +22,26 @@ async function main() {
   const ca = cfg.database.caFile ? await readFile(cfg.database.caFile, "utf8") : null;
   const db = connect(cfg.database.url, ca);
   const send = sendersFor(cfg);
-  const sheet = cfg.sheet
-    ? new SheetReader(await loadServiceAccount(cfg.sheet.keyFile), cfg.sheet.sheetId, cfg.sheet.tab)
+  const google = cfg.googleKeyFile
+    ? new GoogleAuth(await loadServiceAccount(cfg.googleKeyFile))
     : null;
+  const readers = [
+    google && cfg.sheet ? new SheetReader(google, cfg.sheet.sheetId, cfg.sheet.tab) : null,
+    google && cfg.folder ? new FolderReader(google, cfg.folder.folderId) : null,
+  ].filter((r) => r !== null);
   log("worker.started", {
     worker: cfg.workerName,
     database: ca ? "hosted (TLS verified)" : "local",
     claude: cfg.claude !== null,
     grok: cfg.grok !== null,
-    sheet: sheet !== null,
+    sheet: cfg.sheet !== null && google !== null,
+    folder: cfg.folder !== null && google !== null,
   });
-  if (!sheet) log("worker.warning", { message: "No sheet settings: replies won't be read" });
+  if (readers.length === 0) {
+    log("worker.warning", {
+      message: "No results sheet or folder settings: replies won't be read",
+    });
+  }
 
   let stopping = false;
   const stop = () => {
@@ -52,8 +62,10 @@ async function main() {
         lastPoll = Date.now();
         const expired = await db.expireWaiting();
         if (expired) log("replies.expired", { count: expired });
-        if (sheet) {
-          const summary = await processRows(await sheet.readRows(), db);
+        const rows: string[][] = [];
+        for (const reader of readers) rows.push(...(await reader.readRows()));
+        if (readers.length) {
+          const summary = await processRows(rows, db);
           if (summary.new) log("replies.read", summary);
         }
       }

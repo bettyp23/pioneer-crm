@@ -3,10 +3,14 @@ import { readFile } from "node:fs/promises";
 
 import { z } from "zod";
 
-// Read-only access to the "Pioneer Results" tab of the Agency Dashboard, as the service account
-// shared on that sheet as Viewer (docs/runbooks/m8-setup.md §1). Scope: spreadsheets.readonly.
+// Read-only Google access as the service account shared as Viewer on the Agency Dashboard sheet
+// and the "Pioneer Results" folder (docs/runbooks/m8-setup.md). Scopes are read-only; the account
+// can only see what was shared with it.
 
-const SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const SCOPE = [
+  "https://www.googleapis.com/auth/spreadsheets.readonly",
+  "https://www.googleapis.com/auth/drive.readonly",
+].join(" ");
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 const serviceAccountSchema = z.object({
@@ -40,19 +44,18 @@ export function buildAssertion(sa: ServiceAccount, nowSeconds = Math.floor(Date.
   return `${header}.${claims}.${b64url(signature)}`;
 }
 
-type Fetch = typeof fetch;
+export type Fetch = typeof fetch;
 
-export class SheetReader {
+// One signed-in service account, shared by the sheet and folder readers.
+export class GoogleAuth {
   private token: { value: string; expiresAt: number } | null = null;
 
   constructor(
     private readonly sa: ServiceAccount,
-    private readonly sheetId: string,
-    private readonly tab: string,
-    private readonly fetchImpl: Fetch = fetch,
+    readonly fetchImpl: Fetch = fetch,
   ) {}
 
-  private async accessToken(): Promise<string> {
+  async accessToken(): Promise<string> {
     if (this.token && this.token.expiresAt > Date.now() + 60_000) return this.token.value;
     const res = await this.fetchImpl(TOKEN_URL, {
       method: "POST",
@@ -63,18 +66,26 @@ export class SheetReader {
       }),
       signal: AbortSignal.timeout(30_000),
     });
-    if (!res.ok) throw new Error(`Google sign-in for the sheet failed (HTTP ${res.status})`);
+    if (!res.ok) throw new Error(`Google sign-in failed (HTTP ${res.status})`);
     const body = (await res.json()) as { access_token: string; expires_in: number };
     this.token = { value: body.access_token, expiresAt: Date.now() + body.expires_in * 1000 };
     return body.access_token;
   }
+}
+
+export class SheetReader {
+  constructor(
+    private readonly auth: GoogleAuth,
+    private readonly sheetId: string,
+    private readonly tab: string,
+  ) {}
 
   // All rows below the header, as arrays of cell text (columns A–G).
   async readRows(): Promise<string[][]> {
     const range = encodeURIComponent(`'${this.tab.replaceAll("'", "''")}'!A2:G`);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(this.sheetId)}/values/${range}?majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
-    const res = await this.fetchImpl(url, {
-      headers: { Authorization: `Bearer ${await this.accessToken()}` },
+    const res = await this.auth.fetchImpl(url, {
+      headers: { Authorization: `Bearer ${await this.auth.accessToken()}` },
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`Reading the results tab failed (HTTP ${res.status})`);

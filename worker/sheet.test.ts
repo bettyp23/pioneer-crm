@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { WorkerDb } from "./db";
 import { processRows } from "./results";
-import { buildAssertion, SheetReader, toResultRow } from "./sheet";
+import { buildAssertion, GoogleAuth, SheetReader, toResultRow } from "./sheet";
 
 const JOB = "11111111-1111-4111-8111-111111111111";
 const row = (overrides: Partial<Record<number, string>> = {}) => {
@@ -74,7 +74,8 @@ describe("Google sign-in", () => {
     });
     expect(claims).toEqual({
       iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
+      scope:
+        "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive.readonly",
       aud: "https://oauth2.googleapis.com/token",
       iat: 1_000,
       exp: 4_600,
@@ -93,10 +94,9 @@ describe("Google sign-in", () => {
         : Response.json({ values: [row(), ["x"]] }),
     );
     const reader = new SheetReader(
-      sa,
+      new GoogleAuth(sa, fetchImpl as typeof fetch),
       "SHEETID_abcdefghijklmnop",
       "Pioneer Results",
-      fetchImpl as typeof fetch,
     );
     expect(await reader.readRows()).toEqual([row(), ["x"]]);
     await reader.readRows();
