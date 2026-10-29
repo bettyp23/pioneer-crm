@@ -23,8 +23,12 @@ describe("M7 providers (D-24)", () => {
     expect(SELECTABLE_PROVIDERS).toEqual(["manual", "anthropic", "openrouter", "openai"]);
   });
 
-  it.each(["xai", "perplexity"])("refuses %s for agents, costs and budgets", (provider) => {
-    expect(agentFormSchema.safeParse({ ...agent, provider }).success).toBe(false);
+  it("allows Grok for agents again (M8, D-36) but never Perplexity", () => {
+    expect(agentFormSchema.safeParse({ ...agent, provider: "xai" }).success).toBe(true);
+    expect(agentFormSchema.safeParse({ ...agent, provider: "perplexity" }).success).toBe(false);
+  });
+
+  it.each(["xai", "perplexity"])("refuses %s for costs and budgets", (provider) => {
     expect(usageSchema.safeParse({ provider, work_item_id: "", cost: "1", note: "" }).success).toBe(
       false,
     );

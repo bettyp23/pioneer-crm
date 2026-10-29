@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import {
   agentFormSchema,
   PROVIDER_LABELS,
-  SELECTABLE_PROVIDERS,
+  AGENT_PROVIDERS,
   WORK_TYPE_LABELS,
   WORK_TYPES,
   type AgentFormInput,
@@ -67,7 +67,7 @@ export function AgentForm({
           <Field>
             <FieldLabel htmlFor="provider">Runs on</FieldLabel>
             <NativeSelect id="provider" {...form.register("provider")}>
-              {SELECTABLE_PROVIDERS.map((p) => (
+              {AGENT_PROVIDERS.map((p) => (
                 <option key={p} value={p}>
                   {PROVIDER_LABELS[p]}
                 </option>

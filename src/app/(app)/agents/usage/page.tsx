@@ -19,6 +19,9 @@ import {
   type SelectableProvider,
 } from "@/features/agents/schemas";
 import { getUsageSummary } from "@/features/agents/server/queries";
+import { ResumeConnectionButton } from "@/features/chat/components/resume-connection-button";
+import { CONNECTION_LABELS, type Connection } from "@/features/chat/schemas";
+import { listConnectionUsage } from "@/features/chat/server/queries";
 import { formatDateTime } from "@/lib/format";
 import { can } from "@/server/auth/permissions";
 import { requireMember } from "@/server/auth/session";
@@ -30,15 +33,61 @@ const isSelectable = (p: Provider): p is SelectableProvider =>
 
 export default async function UsagePage() {
   const { member } = await requireMember();
-  const { spend, ledger } = await getUsageSummary();
+  const [{ spend, ledger }, connections] = await Promise.all([
+    getUsageSummary(),
+    listConnectionUsage(),
+  ]);
   const isOwner = can(member.role, "workspace.manage");
   return (
     <>
       <PageHeader
         title="AI Command Center"
-        description="Monthly caps per provider. Connectors (later) must pass the cap check before every call."
+        description="Pioneer (Claude) and Michael Scott run on your Claude and Grok plans, which cap their own usage. Pioneer adds a loop brake per connection. The dollar caps below apply only to pay-per-use keys."
       />
       <AgentTabs active="usage" />
+      <section className="flex flex-col gap-2">
+        <h2 className="font-medium">Connections</h2>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Connection</TableHead>
+                <TableHead className="text-right">Sends in the last hour</TableHead>
+                <TableHead className="text-right">This month</TableHead>
+                <TableHead>Loop brake</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {connections.map((c) => (
+                <TableRow key={c.connection}>
+                  <TableCell>{CONNECTION_LABELS[c.connection as Connection]}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {c.lastHour} / {c.hourly_limit}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{c.thisMonth}</TableCell>
+                  <TableCell className="whitespace-normal">
+                    {c.paused_at ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-destructive text-xs">
+                          Paused {formatDateTime(c.paused_at, member.workspaceTimezone)}
+                          {c.paused_reason ? ` — ${c.paused_reason}` : ""}
+                        </span>
+                        {isOwner ? (
+                          <ResumeConnectionButton connection={c.connection as Connection} />
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">
+                        On: pauses after {c.hourly_limit} sends in an hour
+                      </span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -100,8 +149,8 @@ export default async function UsagePage() {
         <section className="flex flex-col gap-2">
           <h2 className="font-medium">Record a cost</h2>
           <p className="text-muted-foreground text-xs">
-            For now, copy costs from your OpenRouter, Anthropic or OpenAI console. Once Hermes is
-            connected, costs are recorded automatically.
+            Only for pay-per-use keys: copy the cost from that provider&apos;s console. Sends to
+            Pioneer (Claude) and Michael Scott use your plans and are not recorded here.
           </p>
           <UsageForm />
         </section>

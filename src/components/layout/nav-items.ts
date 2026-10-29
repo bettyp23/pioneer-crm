@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   ListChecks,
   type LucideIcon,
+  MessageSquare,
   Package,
   Receipt,
   Repeat,
@@ -22,7 +23,7 @@ import {
 
 // Sidebar navigation for every module in the screen map (docs/architecture.md §8).
 // Modules not built yet show their milestone instead of linking to a broken page.
-const CURRENT_MILESTONE = 6;
+const CURRENT_MILESTONE = 8;
 export type NavItem = {
   label: string;
   href: string;
@@ -44,7 +45,10 @@ const item = (label: string, href: string, icon: LucideIcon, milestone: number):
 export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Overview",
-    items: [item("Dashboard", "/dashboard", LayoutDashboard, 1)],
+    items: [
+      item("Dashboard", "/dashboard", LayoutDashboard, 1),
+      item("Pioneer", "/pioneer", MessageSquare, 8),
+    ],
   },
   {
     label: "Relationships",

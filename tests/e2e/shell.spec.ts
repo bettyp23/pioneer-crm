@@ -27,6 +27,7 @@ test.describe("as owner", () => {
     ]) {
       await expect(nav.getByRole("link", { name })).toBeVisible();
     }
+    await expect(nav.getByRole("link", { name: "Pioneer", exact: true })).toBeVisible();
     // Every module is built (M6): no disabled entries remain.
     await expect(nav.getByRole("button", { disabled: true })).toHaveCount(0);
     await page.screenshot({ path: "test-results/evidence/dashboard-owner.png", fullPage: true });

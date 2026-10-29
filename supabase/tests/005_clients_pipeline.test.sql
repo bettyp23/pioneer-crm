@@ -303,7 +303,8 @@ select isnt_empty(
 );
 select results_eq(
   $$ select count(*)::int from public.audit_events
-     where action = 'lead.updated' and changes ? 'stage_id' $$,
+     where workspace_id = 'a0000000-0000-4000-8000-000000000001'
+       and action = 'lead.updated' and changes ? 'stage_id' $$,
   $$ values (2) $$,
   'each lead stage change is audited'
 );

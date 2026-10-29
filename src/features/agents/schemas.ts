@@ -31,13 +31,15 @@ export const PROVIDERS = [
   "openai",
 ] as const;
 export type Provider = (typeof PROVIDERS)[number];
-// Grok (xAI) and Perplexity are no longer part of the stack (D-24); the database still knows them
-// so historic ledger rows stay readable, but nothing new can use them.
+// Perplexity is retired (D-24). Grok is back as Michael Scott's team, reached through his
+// webhook on the owner's Grok plan (D-34), so it is not offered for new API-based agents.
 export const SELECTABLE_PROVIDERS = ["manual", "anthropic", "openrouter", "openai"] as const;
 export type SelectableProvider = (typeof SELECTABLE_PROVIDERS)[number];
+// Agents may also run on Grok (Michael Scott's team); budgets and the cost ledger may not.
+export const AGENT_PROVIDERS = [...SELECTABLE_PROVIDERS, "xai"] as const;
 export const PROVIDER_LABELS: Record<Provider, string> = {
   manual: "Manual",
-  xai: "xAI (Grok) · retired",
+  xai: "Grok",
   anthropic: "Anthropic (Claude)",
   perplexity: "Perplexity · retired",
   openrouter: "OpenRouter",
@@ -80,10 +82,11 @@ export const ACTION_STATUS_LABELS = {
   cancelled: "Cancelled",
 } as const;
 
-// Durable jobs (D-27): run by the VPS worker; people only watch, retry and cancel.
+// Durable jobs (D-27): run by the Pioneer worker; people only watch, retry and cancel.
 export const JOB_STATUS_LABELS = {
   queued: "Queued",
   running: "Running",
+  waiting_external: "Waiting for reply",
   succeeded: "Done",
   failed: "Failed",
   dead: "Gave up",
@@ -149,7 +152,7 @@ export const agentFormSchema = z.object({
   name: requiredText("a name", 120),
   role_summary: optionalText(1000),
   instructions: optionalText(20000),
-  provider: z.enum(SELECTABLE_PROVIDERS),
+  provider: z.enum(AGENT_PROVIDERS),
   model: optionalText(120),
   allowed_work_types: z.array(z.enum(WORK_TYPES)).min(1, "Pick at least one kind of work"),
   is_active: z.boolean(),

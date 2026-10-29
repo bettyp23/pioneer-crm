@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { gotoHydrated, USERS } from "./fixtures";
 
-// M6 acceptance: agent instructions → work item with curated context → sensitive content
+// M6 acceptance (agents updated to the M8 roster, D-30): agent instructions → work item with curated context → sensitive content
 // flagged and overridden with a reason → hand-off → output → review → proposed action →
 // approval → done; budgets; viewers read-only.
 
@@ -20,19 +20,17 @@ test.describe("as owner", () => {
 
     // Paste the bot's saved instructions into its agent record
     await page.goto("/agents/roster");
-    await page.getByRole("link", { name: "Marketing & SEO Agent" }).click();
+    await page.getByRole("link", { name: "Michael Scott (Grok)" }).click();
     await page.waitForLoadState("networkidle");
     await page
       .getByLabel("Saved instructions")
       .fill(`You are the marketing agent ${id}. Cite sources.`);
     await page.getByRole("button", { name: "Save agent" }).click();
-    await expect(page.getByRole("link", { name: "Marketing & SEO Agent" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Michael Scott (Grok)" })).toBeVisible();
 
     // Work item with business context + opt-in contacts (flagged)
     await gotoHydrated(page, "/agents/queue/new");
-    await page
-      .getByLabel("Agent", { exact: true })
-      .selectOption({ label: "Marketing & SEO Agent" });
+    await page.getByLabel("Agent", { exact: true }).selectOption({ label: "Michael Scott (Grok)" });
     await page
       .getByLabel("Client", { exact: true })
       .selectOption({ label: "Northwind Example Bakery" });
@@ -101,9 +99,7 @@ test.describe("as owner", () => {
   test("business-only context is not flagged; usage tracks the budget", async ({ page }) => {
     const id = unique();
     await gotoHydrated(page, "/agents/queue/new");
-    await page
-      .getByLabel("Agent", { exact: true })
-      .selectOption({ label: "Marketing & SEO Agent" });
+    await page.getByLabel("Agent", { exact: true }).selectOption({ label: "Pioneer (Claude)" });
     await page
       .getByLabel("Client", { exact: true })
       .selectOption({ label: "Sam Example Consulting" });
@@ -118,7 +114,9 @@ test.describe("as owner", () => {
     await gotoHydrated(page, "/agents/usage");
     await expect(page.getByRole("cell", { name: "OpenRouter" })).toBeVisible();
     await expect(page.getByLabel("Monthly cap for OpenRouter")).toHaveValue("50");
-    await expect(page.getByRole("cell", { name: /Grok/ })).toHaveCount(0);
+    // Plan-based connections have a loop brake, not a dollar cap (D-33).
+    await expect(page.getByRole("cell", { name: "Michael Scott (Grok)" })).toBeVisible();
+    await expect(page.getByText("On: pauses after 20 sends in an hour").first()).toBeVisible();
     await page.getByLabel("Cost in dollars").fill("0.42");
     await page.getByLabel("Cost note").fill(`E2E ${id}`);
     await page.getByRole("button", { name: "Record cost" }).click();
@@ -126,21 +124,15 @@ test.describe("as owner", () => {
     await expect(page.getByText(`OpenRouter · E2E ${id}`)).toBeVisible();
   });
 
-  test("Pioneer OS 3.0 roster replaces the Grok bots", async ({ page }) => {
+  test("roster: Pioneer (Claude) and Michael Scott (Grok), verified only by a round trip", async ({
+    page,
+  }) => {
     await page.goto("/agents/roster");
-    for (const name of [
-      "Operations Agent",
-      "Sales Agent",
-      "Client Onboarding Agent",
-      "Development Agent",
-      "QA & Security Agent",
-      "Marketing & SEO Agent",
-      "Client Success & Maintenance Agent",
-      "Finance & Admin Agent",
-    ]) {
+    for (const name of ["Pioneer (Claude)", "Michael Scott (Grok)"]) {
       await expect(page.getByRole("link", { name, exact: true })).toBeVisible();
     }
-    await expect(page.getByText(/Grok/)).toHaveCount(0);
+    await expect(page.getByText("Not verified yet")).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Operations Agent" })).toHaveCount(0);
   });
 
   test("jobs: a job that gave up can be retried", async ({ page }) => {
@@ -148,7 +140,7 @@ test.describe("as owner", () => {
     const row = page.getByRole("row").filter({ hasText: "provider returned 503 three times" });
     // "Gave up" on a fresh seed; "Cancelled" when the suite is re-run against the same database.
     await expect(row.getByText(/^(Gave up|Cancelled)$/)).toBeVisible();
-    await expect(row.getByText("Operations Agent")).toBeVisible();
+    await expect(row.getByText("Pioneer (Claude)")).toBeVisible();
     await row.getByRole("button", { name: "Retry" }).click();
     await expectToast(page, "Job queued again");
     await expect(row.getByText("Queued")).toBeVisible();
@@ -161,7 +153,7 @@ test.describe("as owner", () => {
     const id = unique();
     // A ready work item to try sending
     await gotoHydrated(page, "/agents/queue/new");
-    await page.getByLabel("Agent", { exact: true }).selectOption({ label: "Operations Agent" });
+    await page.getByLabel("Agent", { exact: true }).selectOption({ label: "Pioneer (Claude)" });
     await page.getByLabel("Kind of work").selectOption({ label: "Plan" });
     await page.getByLabel("Title", { exact: true }).fill(`E2E pause ${id}`);
     await page.getByLabel("What should the agent do?").fill("Plan the week.");

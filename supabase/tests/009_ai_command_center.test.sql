@@ -18,13 +18,14 @@ grant execute on function pg_temp.aver(text) to authenticated;
 
 insert into public.clients (id, workspace_id, name)
 values ('c6000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'AI Client');
-insert into ids select key, id from public.agents where workspace_id = 'a0000000-0000-4000-8000-000000000001';
-
 -- ── seeding ────────────────────────────────────────────────────────────────
-select results_eq(
-  $$ select count(*)::int from public.agents where workspace_id = 'a0000000-0000-4000-8000-000000000001' $$,
-  $$ values (8) $$, 'every workspace gets the eight vision roles'
+select set_eq(
+  $$ select key from public.agents where workspace_id = 'a0000000-0000-4000-8000-000000000001' $$,
+  $$ values ('pioneer'), ('michael_scott') $$,
+  'every workspace gets Pioneer (Claude) and Michael Scott (Grok) (M8, D-30)'
 );
+select pg_temp.seed_m7_roles('a0000000-0000-4000-8000-000000000001');
+insert into ids select key, id from public.agents where workspace_id = 'a0000000-0000-4000-8000-000000000001';
 select results_eq(
   $$ select provider::text, monthly_cap_minor from public.ai_budgets
      where workspace_id = 'a0000000-0000-4000-8000-000000000001' order by provider::text $$,
