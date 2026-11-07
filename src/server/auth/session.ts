@@ -32,8 +32,8 @@ export const getClaims = cache(async () => {
 // Redirects otherwise. Call from every protected page, query and Server Action.
 export const requireMember = cache(async () => {
   const claims = await getClaims();
-  if (!claims) redirect("/login");
-  if (claims.aal !== "aal2") redirect("/login/mfa");
+  if (!claims) redirect("/");
+  if (claims.aal !== "aal2") redirect("/mfa");
 
   const supabase = await getSupabase();
   const { data, error } = await supabase

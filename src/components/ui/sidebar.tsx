@@ -7,6 +7,7 @@ import { PanelLeftIcon } from "lucide-react"
 import { Slot } from "radix-ui"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import { APP_BASE_PATH } from "@/lib/mount"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -82,8 +83,9 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      // Keep the sidebar state on the CRM mount only, not on the marketing site.
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=; path=/; max-age=0`
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=${APP_BASE_PATH}; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
     },
     [setOpenProp, open]
   )

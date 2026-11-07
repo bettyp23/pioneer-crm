@@ -1,15 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { APP_BASE_PATH, isPublicAppPath, scopedAuthCookies } from "@/lib/mount";
 import { buildCsp } from "@/lib/security/csp";
 
 // Runs before every page request:
 //  1. generates a per-request CSP nonce (docs/security.md §8);
 //  2. refreshes the Supabase session cookie;
-//  3. redirects visitors without a session to /login.
+//  3. redirects visitors without a session to the sign-in page (/login on the public host).
 // This is a coarse gate only. Authorization happens in requireMember() and in RLS.
-
-const PUBLIC_PATHS = ["/login"];
 
 export async function proxy(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
@@ -28,20 +27,25 @@ export async function proxy(request: NextRequest) {
 
   let response = NextResponse.next({ request: { headers: forwardHeaders() } });
   let cacheHeaders: Record<string, string> = {};
+  let pendingCookies: ReturnType<typeof scopedAuthCookies> = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
     {
+      cookieOptions: { path: APP_BASE_PATH },
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
+          pendingCookies = cookiesToSet.flatMap(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            return scopedAuthCookies(name, value, options);
+          });
           response = NextResponse.next({ request: { headers: forwardHeaders() } });
-          for (const { name, value, options } of cookiesToSet) {
-            response.cookies.set(name, value, options);
+          for (const cookie of pendingCookies) {
+            response.cookies.set(cookie.name, cookie.value, cookie.options);
           }
           cacheHeaders = { ...cacheHeaders, ...headers };
         },
@@ -53,15 +57,21 @@ export async function proxy(request: NextRequest) {
   // client creation and this call (Supabase SSR guidance).
   const { data } = await supabase.auth.getClaims();
 
+  // pathname has basePath stripped. Sign-in is `/` → public /login. MFA is `/mfa`.
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-  if (!data?.claims && !isPublic) {
+  if (!data?.claims && !isPublicAppPath(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/";
     url.search = "";
+    // Absolute on the request host (the vercel.app host behind the proxy).
+    // A path-only Location makes Next throw. The worker turns an upstream
+    // absolute Location into a path so the browser does not leave its host,
+    // and this app never redirects to pioneerdigitalai.com.
     const redirect = NextResponse.redirect(url);
-    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    for (const cookie of pendingCookies) {
+      redirect.cookies.set(cookie.name, cookie.value, cookie.options);
+    }
     response = redirect;
   }
 

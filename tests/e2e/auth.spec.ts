@@ -16,7 +16,7 @@ import {
 // FR-AUTH-1, FR-AUTH-2, FR-AUTH-4
 
 test("unauthenticated visitors are redirected to /login", async ({ page }) => {
-  for (const path of ["/", "/dashboard", "/settings/workspace"]) {
+  for (const path of ["/", "/dashboard", "/login/settings/workspace"]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login$/);
   }

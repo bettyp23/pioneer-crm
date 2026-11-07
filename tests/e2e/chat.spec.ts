@@ -34,7 +34,7 @@ test.describe("as owner", () => {
   }) => {
     const id = unique();
     try {
-      await gotoHydrated(page, "/dashboard");
+      await gotoHydrated(page, "/login/dashboard");
       await expect(page.getByRole("heading", { name: "Michael Scott" })).toBeVisible();
       // Pioneer (Claude) threads are not part of this view.
       await expect(page.getByText(/the discovery follow-up email is waiting/)).toHaveCount(0);
@@ -60,7 +60,7 @@ test.describe("as owner", () => {
     } finally {
       await cancelQueuedSends(id);
     }
-    await gotoHydrated(page, "/dashboard");
+    await gotoHydrated(page, "/login/dashboard");
     await expect(
       page
         .getByRole("listitem")
@@ -74,7 +74,7 @@ test.describe("as viewer", () => {
   test.use({ storageState: USERS.viewer.storage });
 
   test("viewer reads the conversation but cannot write", async ({ page }) => {
-    await page.goto("/dashboard");
+    await page.goto("/login/dashboard");
     await expect(page.getByRole("heading", { name: "Michael Scott" })).toBeVisible();
     await expect(page.getByText("Only owners and admins can message Michael.")).toBeVisible();
     await expect(page.getByLabel("Message")).toHaveCount(0);

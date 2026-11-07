@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { legacyMountRedirects } from "./src/lib/mount";
+
 // Static security headers. The Content-Security-Policy is per-request (nonce) and is set
 // in src/proxy.ts. See docs/security.md §8.
 const securityHeaders = [
@@ -15,6 +17,19 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Whole app under /login: pages, server actions, and /_next. The sign-in page is
+  // the app root, so the public URL is /login rather than /login/login.
+  // Do not redirect this host to pioneerdigitalai.com; the path proxy loops if we do.
+  basePath: "/login",
+  experimental: {
+    serverActions: {
+      // Browser origin when a proxy forwards Host as the vercel.app upstream.
+      allowedOrigins: ["pioneerdigitalai.com"],
+    },
+  },
+  async redirects() {
+    return [...legacyMountRedirects];
+  },
   // Every page in Pioneer OS is private and per-user, and nonce-based CSP needs
   // request-time rendering, so Cache Components stays off for now (decisions.md D-18).
   cacheComponents: false,
@@ -30,7 +45,13 @@ const nextConfig: NextConfig = {
     },
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/", headers: securityHeaders },
+      { source: "/", headers: securityHeaders, basePath: false },
+      { source: "/dashboard", headers: securityHeaders, basePath: false },
+      { source: "/no-access", headers: securityHeaders, basePath: false },
+    ];
   },
 };
 

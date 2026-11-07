@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Two-step verification" };
 
 export default async function MfaPage() {
   const claims = await getClaims();
-  if (!claims) redirect("/login");
+  if (!claims) redirect("/");
   if (claims.aal === "aal2") redirect("/dashboard");
 
   const supabase = await getSupabase();
