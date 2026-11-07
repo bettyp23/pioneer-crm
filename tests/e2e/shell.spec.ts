@@ -1,68 +1,41 @@
 import { expect, test } from "@playwright/test";
 
-import { gotoHydrated, USERS } from "./fixtures";
+import { USERS } from "./fixtures";
 
-// FR-UI-1, FR-WS-3, FR-AUD-2 and security headers (A8, A9)
+// Minimal shell (one tab), installable app, and security headers (A8, A9)
 
 test.describe("as owner", () => {
   test.use({ storageState: USERS.owner.storage });
 
-  test("shell shows every module; unbuilt modules are not links", async ({ page }) => {
+  test("sidebar has one tab: Dashboard", async ({ page }) => {
     await page.goto("/dashboard");
     const nav = page.locator("[data-sidebar=content]");
+    await expect(nav.getByRole("link")).toHaveCount(1);
     await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Settings" })).toBeVisible();
-    for (const name of [
-      "Clients",
-      "Contacts",
-      "Pipeline",
-      "Follow-ups",
-      "Blueprints",
-      "Projects",
-      "Approvals",
-      "Routines",
-      "Invoices",
-      "Reports",
-      "Work queue",
-    ]) {
-      await expect(nav.getByRole("link", { name })).toBeVisible();
-    }
-    await expect(nav.getByRole("link", { name: "Pioneer", exact: true })).toBeVisible();
-    // Every module is built (M6): no disabled entries remain.
-    await expect(nav.getByRole("button", { disabled: true })).toHaveCount(0);
     await page.screenshot({ path: "test-results/evidence/dashboard-owner.png", fullPage: true });
   });
 
-  test("owner can rename the workspace and the change is audited", async ({ page }) => {
-    await gotoHydrated(page, "/settings/workspace");
-    await page.getByLabel("Workspace name").fill("Demo Workspace Renamed");
-    await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(page.getByText("Workspace settings saved")).toBeVisible();
-    await page.screenshot({ path: "test-results/evidence/settings-workspace.png" });
-
-    await page.goto("/settings/audit");
-    await expect(page.getByRole("cell", { name: "workspace.updated" }).first()).toBeVisible();
-    await expect(
-      page.getByRole("cell", { name: "name: Demo Workspace → Demo Workspace Renamed" }),
-    ).toBeVisible();
-    await page.screenshot({ path: "test-results/evidence/settings-audit.png", fullPage: true });
-
-    // Restore for other tests / reruns.
-    await gotoHydrated(page, "/settings/workspace");
-    await page.getByLabel("Workspace name").fill("Demo Workspace");
-    await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(page.getByText("Workspace settings saved")).toBeVisible();
+  test("removed pages are gone", async ({ page }) => {
+    for (const path of ["/clients", "/pioneer", "/settings/workspace", "/agents/queue"]) {
+      const response = await page.goto(path);
+      expect(response?.status(), path).toBe(404);
+    }
   });
 
-  test("members and security pages render", async ({ page }) => {
-    await page.goto("/settings/members");
-    await expect(page.getByRole("cell", { name: `${USERS.owner.name} (you)` })).toBeVisible();
-    await expect(page.getByRole("cell", { name: USERS.viewer.name })).toBeVisible();
-    await page.screenshot({ path: "test-results/evidence/settings-members.png" });
-
-    await page.goto("/settings/security");
-    await expect(page.getByText("Two-step verification", { exact: true })).toBeVisible();
-    await page.screenshot({ path: "test-results/evidence/settings-security.png" });
+  test("the app can be installed (manifest and icons are public)", async ({ browser }) => {
+    const anon = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const manifest = await anon.request.get("/manifest.webmanifest");
+    expect(manifest.ok()).toBe(true);
+    const body = (await manifest.json()) as { start_url: string; display: string };
+    expect(body.start_url).toBe("/dashboard");
+    expect(body.display).toBe("standalone");
+    for (const icon of ["/app-icon/192", "/app-icon/512", "/apple-icon"]) {
+      const res = await anon.request.get(icon);
+      expect(res.ok(), icon).toBe(true);
+      expect(res.headers()["content-type"]).toContain("image/png");
+    }
+    expect((await anon.request.get("/app-icon/64")).status()).toBe(404);
+    await anon.close();
   });
 
   test("security headers are present", async ({ page }) => {
@@ -80,20 +53,5 @@ test.describe("as owner", () => {
 
     const robots = await page.request.get("/robots.txt");
     expect(await robots.text()).toContain("Disallow: /");
-  });
-});
-
-test.describe("as viewer", () => {
-  test.use({ storageState: USERS.viewer.storage });
-
-  test("viewer cannot see the audit log", async ({ page }) => {
-    await page.goto("/settings/workspace");
-    await expect(page.getByRole("link", { name: "Audit log" })).toHaveCount(0);
-    // Read-only settings: no form.
-    await expect(page.getByLabel("Workspace name")).toHaveCount(0);
-
-    const response = await page.goto("/settings/audit");
-    expect(response?.status()).toBe(404);
-    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   });
 });

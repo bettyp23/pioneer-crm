@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { connection } from "next/server";
 
@@ -21,6 +21,13 @@ export const metadata: Metadata = {
   title: { default: "Pioneer OS", template: "%s · Pioneer OS" },
   description: "Private operations system for Pioneer Digital AI.",
   robots: { index: false, follow: false },
+  // Installed on a phone's home screen it opens full-screen, like a native app.
+  appleWebApp: { capable: true, title: "Pioneer", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

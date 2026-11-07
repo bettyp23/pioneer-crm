@@ -32,6 +32,15 @@ export function localSecretKey(): string {
   return status.SECRET_KEY;
 }
 
+// Local stack's direct database URL (test cleanup only; never a hosted database).
+export function localDbUrl(): string {
+  const status = JSON.parse(execSync("npx supabase status -o json", { encoding: "utf8" })) as {
+    DB_URL?: string;
+  };
+  if (!status.DB_URL?.includes("127.0.0.1")) throw new Error("Local Supabase is not running");
+  return status.DB_URL;
+}
+
 export function totpCode(secret: string = LOCAL_TOTP_SECRET): string {
   return new OTPAuth.TOTP({ secret }).generate();
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import { ChevronsUpDown, LogOut } from "lucide-react";
 import { useRef } from "react";
 
 import {
@@ -48,11 +47,6 @@ export function UserMenu({
               {email ? <span className="text-muted-foreground block text-xs">{email}</span> : null}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/settings/security">
-                <ShieldCheck /> Security
-              </Link>
-            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => signOutForm.current?.requestSubmit()}>
               <LogOut /> Sign out
             </DropdownMenuItem>

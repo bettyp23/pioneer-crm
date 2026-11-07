@@ -16,7 +16,7 @@ import {
 // FR-AUTH-1, FR-AUTH-2, FR-AUTH-4
 
 test("unauthenticated visitors are redirected to /login", async ({ page }) => {
-  for (const path of ["/", "/dashboard", "/settings/workspace", "/settings/audit"]) {
+  for (const path of ["/", "/dashboard", "/settings/workspace"]) {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login$/);
   }
@@ -59,7 +59,7 @@ test("password + TOTP signs in to the dashboard, then sign-out ends the session"
 }) => {
   await signInFully(page, USERS.owner.email);
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: `Welcome, ${USERS.owner.name}` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Michael Scott" })).toBeVisible();
 
   await page.getByRole("button", { name: "Account menu" }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
