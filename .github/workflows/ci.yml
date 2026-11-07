@@ -41,6 +41,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Build the Cloudflare Worker
+        run: npm run build:vinext
+
       - name: Start Supabase (applies migrations + seed)
         run: npx supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,supavisor
       - name: Database lint

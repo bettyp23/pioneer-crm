@@ -11,6 +11,15 @@ import { buildCsp } from "@/lib/security/csp";
 // This is a coarse gate only. Authorization happens in requireMember() and in RLS.
 
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get("host")?.split(":")[0]?.toLowerCase();
+  if (host === "www.pioneerdigitalai.com") {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    url.hostname = "pioneerdigitalai.com";
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   const nonce = btoa(crypto.randomUUID());
   const csp = buildCsp({
     nonce,
