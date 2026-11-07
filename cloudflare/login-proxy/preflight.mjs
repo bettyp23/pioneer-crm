@@ -18,7 +18,9 @@ function locationPath(location) {
   if (location.startsWith("/")) return location;
   const url = new URL(location);
   if (url.hostname === publicHost || url.hostname === `www.${publicHost}`) {
-    throw new Error(`redirect names ${url.hostname} (${location}). Refusing: that loops the proxy.`);
+    throw new Error(
+      `redirect names ${url.hostname} (${location}). Refusing: that loops the proxy.`,
+    );
   }
   return url.pathname;
 }

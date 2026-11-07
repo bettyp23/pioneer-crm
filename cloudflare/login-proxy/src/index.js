@@ -126,8 +126,10 @@ export async function handleLoginProxy(request, env = {}, fetchImpl = globalThis
   });
 }
 
-export default {
+const worker = {
   async fetch(request, env) {
     return handleLoginProxy(request, env);
   },
 };
+
+export default worker;
