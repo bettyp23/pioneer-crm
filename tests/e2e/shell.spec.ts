@@ -8,7 +8,7 @@ test.describe("as owner", () => {
   test.use({ storageState: USERS.owner.storage });
 
   test("sidebar has one tab: Dashboard", async ({ page }) => {
-    await page.goto("/dashboard");
+    await page.goto("/login/dashboard");
     const nav = page.locator("[data-sidebar=content]");
     await expect(nav.getByRole("link")).toHaveCount(1);
     await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
@@ -24,22 +24,23 @@ test.describe("as owner", () => {
 
   test("the app can be installed (manifest and icons are public)", async ({ browser }) => {
     const anon = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    const manifest = await anon.request.get("/manifest.webmanifest");
+    const manifest = await anon.request.get("/login/manifest.webmanifest");
     expect(manifest.ok()).toBe(true);
-    const body = (await manifest.json()) as { start_url: string; display: string };
-    expect(body.start_url).toBe("/dashboard");
+    const body = (await manifest.json()) as { start_url: string; scope: string; display: string };
+    expect(body.start_url).toBe("/login/dashboard");
+    expect(body.scope).toBe("/login/");
     expect(body.display).toBe("standalone");
-    for (const icon of ["/app-icon/192", "/app-icon/512", "/apple-icon"]) {
+    for (const icon of ["/login/app-icon/192", "/login/app-icon/512", "/login/apple-icon"]) {
       const res = await anon.request.get(icon);
       expect(res.ok(), icon).toBe(true);
       expect(res.headers()["content-type"]).toContain("image/png");
     }
-    expect((await anon.request.get("/app-icon/64")).status()).toBe(404);
+    expect((await anon.request.get("/login/app-icon/64")).status()).toBe(404);
     await anon.close();
   });
 
   test("security headers are present", async ({ page }) => {
-    const response = await page.goto("/dashboard");
+    const response = await page.goto("/login/dashboard");
     const headers = response!.headers();
     expect(headers["content-security-policy"]).toMatch(
       /script-src 'self' 'nonce-[^']+' 'strict-dynamic'/,

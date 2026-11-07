@@ -26,7 +26,7 @@ export async function signIn(input: unknown): Promise<ActionResult> {
     console.warn("auth.sign_in_failed", { code: error.code, status: error.status });
     return { ok: false, error: SIGN_IN_FAILED };
   }
-  redirect("/login/mfa");
+  redirect("/mfa");
 }
 
 export type EnrollmentStart =
@@ -34,12 +34,12 @@ export type EnrollmentStart =
 
 export async function startTotpEnrollment(): Promise<EnrollmentStart> {
   const claims = await getClaims();
-  if (!claims) redirect("/login");
+  if (!claims) redirect("/");
 
   const supabase = await getSupabase();
   const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
   if (listError) return { ok: false, error: "Could not start enrollment. Try again." };
-  if (factors.totp.length > 0) redirect("/login/mfa");
+  if (factors.totp.length > 0) redirect("/mfa");
 
   // Remove abandoned, unverified enrollments before starting a new one.
   for (const factor of factors.all) {
@@ -62,7 +62,7 @@ export async function startTotpEnrollment(): Promise<EnrollmentStart> {
 export async function verifyTotpEnrollment(input: unknown): Promise<ActionResult> {
   const parsed = verifyEnrollmentSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: CODE_FAILED };
-  if (!(await getClaims())) redirect("/login");
+  if (!(await getClaims())) redirect("/");
 
   const supabase = await getSupabase();
   const { error } = await supabase.auth.mfa.challengeAndVerify(parsed.data);
@@ -76,12 +76,12 @@ export async function verifyTotpEnrollment(input: unknown): Promise<ActionResult
 export async function verifyTotp(input: unknown): Promise<ActionResult> {
   const parsed = totpCodeSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: CODE_FAILED };
-  if (!(await getClaims())) redirect("/login");
+  if (!(await getClaims())) redirect("/");
 
   const supabase = await getSupabase();
   const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
   const factor = factors?.totp[0];
-  if (listError || !factor) redirect("/login/mfa");
+  if (listError || !factor) redirect("/mfa");
 
   const { error } = await supabase.auth.mfa.challengeAndVerify({
     factorId: factor.id,

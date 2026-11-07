@@ -7,10 +7,11 @@ import { getClaims } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "Sign in" };
 
+// App root. With basePath /login the public URL is /login, not /login/login.
 export default async function LoginPage() {
   const claims = await getClaims();
   if (claims?.aal === "aal2") redirect("/dashboard");
-  if (claims) redirect("/login/mfa");
+  if (claims) redirect("/mfa");
 
   return (
     <Card>

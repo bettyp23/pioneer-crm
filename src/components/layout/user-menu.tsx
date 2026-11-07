@@ -3,6 +3,7 @@
 import { ChevronsUpDown, LogOut } from "lucide-react";
 import { useRef } from "react";
 
+import { publicPath } from "@/lib/mount";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +28,7 @@ export function UserMenu({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <form ref={signOutForm} action="/auth/sign-out" method="post" hidden />
+        <form ref={signOutForm} action={publicPath("/auth/sign-out")} method="post" hidden />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" aria-label="Account menu">

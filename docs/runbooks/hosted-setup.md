@@ -82,6 +82,17 @@ The first log line should say `"database":"hosted (TLS verified)"`.
 - **Plan:** Vercel's Hobby plan is for non-commercial use; Pioneer runs your business, so it needs
   Pro.
 
+## 6b. Public `/login` path
+
+The marketing site stays on Cloudflare Pages. The CRM is reached only at
+`https://pioneerdigitalai.com/login` (and paths under it) by the worker in
+`cloudflare/login-proxy`. Deploy that worker only after this app's production deployment is
+READY and `node cloudflare/login-proxy/preflight.mjs` passes.
+
+Do not add `pioneerdigitalai.com` as a domain on the CRM project, and do not change the
+Supabase site URL to that host. Password sign-in does not use the site URL. A redirect from
+the Vercel host to the public host loops through the proxy.
+
 ## 7. Live test
 
 On your phone: open the site → **Pioneer** → "draft a follow-up for test client" → Send. Within
