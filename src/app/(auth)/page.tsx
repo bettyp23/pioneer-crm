@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "@/features/auth/components/login-form";
-import { getClaims } from "@/server/auth/session";
+import { getClaims, redirectToAppPath } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 // App root. With basePath /login the public URL is /login, not /login/login.
 export default async function LoginPage() {
   const claims = await getClaims();
-  if (claims?.aal === "aal2") redirect("/dashboard");
-  if (claims) redirect("/mfa");
+  if (claims?.aal === "aal2") return redirectToAppPath("/dashboard");
+  if (claims) return redirectToAppPath("/mfa");
 
   return (
     <Card>

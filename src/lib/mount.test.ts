@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  absolutePublicUrl,
   APP_BASE_PATH,
   isLoginMountPath,
   isPublicAppPath,
@@ -34,6 +35,17 @@ describe("login mount paths", () => {
     expect(publicPath("/mfa")).toBe("/login/mfa");
     expect(publicPath("/dashboard")).toBe("/login/dashboard");
     expect(publicPath("/auth/sign-out")).toBe("/login/auth/sign-out");
+  });
+
+  it("builds a same-host absolute URL so the Worker client does not prefix twice", () => {
+    expect(absolutePublicUrl("/no-access", "127.0.0.1:3000", "http")).toBe(
+      "http://127.0.0.1:3000/login/no-access",
+    );
+    expect(absolutePublicUrl("/", "pioneerdigitalai.com", "https")).toBe(
+      "https://pioneerdigitalai.com/login",
+    );
+    expect(absolutePublicUrl("/no-access", "evil.com/login", "https")).toBeNull();
+    expect(absolutePublicUrl("/no-access", "127.0.0.1:3000", "javascript")).toBeNull();
   });
 
   it("treats only sign-in and MFA as public inside the app", () => {

@@ -13,6 +13,16 @@ export function publicPath(appPath: string): string {
   return appPath === "/" ? APP_BASE_PATH : `${APP_BASE_PATH}${appPath}`;
 }
 
+// vinext's RSC client adds basePath again when the redirect header is already
+// `/login/...`, which requests `/login/login/no-access`. An absolute URL on the
+// request host is stripped once and prefixed once. Server actions already
+// receive a single prefix, so they stay on relative app paths.
+export function absolutePublicUrl(appPath: string, host: string, proto: string): string | null {
+  if (proto !== "http" && proto !== "https") return null;
+  if (!/^[A-Za-z0-9.-]+(?::\d+)?$/.test(host)) return null;
+  return `${proto}://${host}${publicPath(appPath)}`;
+}
+
 /** Public pathname. /login-other is not the mount. */
 export function isLoginMountPath(pathname: string): boolean {
   return pathname === APP_BASE_PATH || pathname.startsWith(`${APP_BASE_PATH}/`);
