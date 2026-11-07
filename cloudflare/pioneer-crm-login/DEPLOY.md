@@ -24,16 +24,24 @@ request on Free, default 30 seconds (max 5 minutes) on Paid. This build was not
 measured in production CPU milliseconds. The local workerd log reports wall
 time only (`GET /login/` 99 ms).
 
-## This build (local, public placeholder env)
+## This build is not uploadable
 
-Uncompressed Worker modules (`.js` + `.wasm`, source maps excluded): **4,604,976 bytes**
-(145 JS files, 56 wasm files). Per-file gzip sum: **1,601,357 bytes**. Static
-assets: **44 files, 1,072,657 bytes**, under `/login/_next/`. Main module
-`index.js` is 209 bytes and imports the rest. Output:
-`.cloudflare/output/v0/workers/default/` (gitignored).
+The measured Worker was built with the local Supabase placeholder
+(`http://127.0.0.1:54321`). Those values are inlined. Do not upload that output.
 
-`NEXT_PUBLIC_*` values are inlined at `vite build`. Rebuild with the real public
-values before upload. Do not upload this local build.
+The production names `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` exist on the Vercel project as integration
+store entries. This session cannot read their values (`decrypted: false`). The
+live page's public JavaScript does not contain them (sign-in uses a server
+action). Rebuild with the real public values, confirm the bundle contains
+`haorcxcglsilmzqdltrc.supabase.co` and not `127.0.0.1:54321`, then upload.
+
+Uncompressed Worker modules from the placeholder build (`.js` + `.wasm`, source
+maps excluded): **4,604,976 bytes** (145 JS files, 56 wasm files). Per-file gzip
+sum: **1,601,357 bytes**. Static assets: **44 files, 1,072,657 bytes**. The
+current published limit is **64 MiB uncompressed** on both plans (changelog
+2026-09-04). The older compressed 3 MiB / 10 MiB script cap was removed.
+Account settings did not identify Free or Paid.
 
 ## Env names
 
