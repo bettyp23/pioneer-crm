@@ -3,28 +3,22 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { NativeSelect } from "@/components/forms/native-select";
 import { Textarea } from "@/components/forms/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  MAX_MESSAGE_LENGTH,
-  RECIPIENT_LABELS,
-  RECIPIENTS,
-  type Recipient,
-} from "@/features/chat/schemas";
+import { MAX_MESSAGE_LENGTH } from "@/features/chat/schemas";
 import { sendMessage } from "@/features/chat/server/actions";
 
 // Plain textarea on purpose: the iPhone keyboard's dictation button works in it.
+// Every message goes straight to Michael Scott (Grok).
 export function ChatComposer() {
   const [pending, startTransition] = useTransition();
   const [body, setBody] = useState("");
-  const [recipient, setRecipient] = useState<Recipient>("auto");
   const [warnings, setWarnings] = useState<string[]>([]);
 
   const send = (confirmFlagged: boolean) =>
     startTransition(async () => {
-      const result = await sendMessage({ body, recipient, confirmFlagged });
+      const result = await sendMessage({ body, recipient: "michael_scott", confirmFlagged });
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -52,7 +46,7 @@ export function ChatComposer() {
         id="chat-body"
         value={body}
         maxLength={MAX_MESSAGE_LENGTH}
-        placeholder="Write to Pioneer…"
+        placeholder="Message Michael…"
         onChange={(e) => {
           setBody(e.target.value);
           setWarnings([]);
@@ -68,7 +62,7 @@ export function ChatComposer() {
         <Alert variant="destructive">
           <AlertTitle>Check before sending</AlertTitle>
           <AlertDescription>
-            <p>This message leaves Pioneer and contains: {warnings.join(", ")}.</p>
+            <p>This message goes to Michael Scott and contains: {warnings.join(", ")}.</p>
             <div className="mt-2 flex gap-2">
               <Button type="button" size="sm" disabled={pending} onClick={() => send(true)}>
                 Send anyway
@@ -86,22 +80,8 @@ export function ChatComposer() {
           </AlertDescription>
         </Alert>
       ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor="chat-recipient" className="text-muted-foreground text-sm">
-          Send to
-        </label>
-        <NativeSelect
-          id="chat-recipient"
-          className="w-auto"
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value as Recipient)}
-        >
-          {RECIPIENTS.map((r) => (
-            <option key={r} value={r}>
-              {RECIPIENT_LABELS[r]}
-            </option>
-          ))}
-        </NativeSelect>
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground hidden text-xs sm:inline">⌘ + Enter to send</span>
         <Button type="submit" className="ml-auto" disabled={pending || body.trim() === ""}>
           {pending ? "Sending…" : "Send"}
         </Button>

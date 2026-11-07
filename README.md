@@ -1,6 +1,19 @@
 # pioneer-crm
 Pioneer Digital AI custom CRM (Next.js + Supabase)
 
+## Current version: minimal (chat with Michael)
+
+`main` is deliberately cut down to one page: sign in (email + password + 6-digit code), then the
+**Dashboard**, which is a direct chat with Michael Scott (Grok). Messages go out and replies come
+back through the worker on the owner's Mac (`npm run worker`), so the Mac must be on for replies.
+
+Install it as an app: on iPhone open the site in Safari → Share → **Add to Home Screen**; on a
+laptop use Chrome/Edge → the install icon in the address bar.
+
+The full CRM (clients, pipeline, projects, operations, agents, settings) is kept on the
+`archive/full-pioneer-os` branch. The database schema and worker are unchanged, so those pages
+can be brought back without data loss. The docs below describe the full system.
+
 Pioneer OS is a private, internal CRM and service-operations platform. Start with the docs:
 
 - [Requirements](docs/requirements.md)

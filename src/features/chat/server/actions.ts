@@ -35,7 +35,7 @@ export async function sendMessage(
     p_flagged: warnings.length > 0,
   });
   if (error) return { ok: false, error: toUserMessage(error, "message.send") };
-  revalidatePath("/pioneer");
+  revalidatePath("/dashboard");
   return { ok: true, data: { sent: true, warnings } };
 }
 
