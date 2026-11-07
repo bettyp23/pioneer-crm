@@ -84,14 +84,14 @@ The first log line should say `"database":"hosted (TLS verified)"`.
 
 ## 6b. Public `/login` path
 
-The marketing site stays on Cloudflare Pages. The CRM is reached only at
-`https://pioneerdigitalai.com/login` (and paths under it) by the worker in
-`cloudflare/login-proxy`. Deploy that worker only after this app's production deployment is
-READY and `node cloudflare/login-proxy/preflight.mjs` passes.
+The marketing site stays on Cloudflare Pages. The CRM Worker is `pioneer-crm-login`, built
+with vinext (`npm run build:vinext`). It is not a proxy to Vercel. Attach only
+`pioneerdigitalai.com/login` and `pioneerdigitalai.com/login/*` after CI passes. Leave
+`/`, `/_next`, `/api`, email DNS, and the victoryspinal Worker alone.
 
-Do not add `pioneerdigitalai.com` as a domain on the CRM project, and do not change the
-Supabase site URL to that host. Password sign-in does not use the site URL. A redirect from
-the Vercel host to the public host loops through the proxy.
+The Worker needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` at
+build time. Do not put `SUPABASE_SECRET_KEY` on the Worker. Do not change the Supabase site
+URL until the Worker is the live origin.
 
 ## 7. Live test
 

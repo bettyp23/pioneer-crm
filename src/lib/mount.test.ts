@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  absolutePublicUrl,
   APP_BASE_PATH,
   isLoginMountPath,
   isPublicAppPath,
@@ -8,7 +9,7 @@ import {
   legacyMountRedirects,
   PUBLISHED_SITE_ORIGIN,
   publicPath,
-  scopedAuthCookies,
+  scopedAuthCookie,
 } from "@/lib/mount";
 
 describe("login mount paths", () => {
@@ -34,6 +35,17 @@ describe("login mount paths", () => {
     expect(publicPath("/mfa")).toBe("/login/mfa");
     expect(publicPath("/dashboard")).toBe("/login/dashboard");
     expect(publicPath("/auth/sign-out")).toBe("/login/auth/sign-out");
+  });
+
+  it("builds a same-host absolute URL so the Worker client does not prefix twice", () => {
+    expect(absolutePublicUrl("/no-access", "127.0.0.1:3000", "http")).toBe(
+      "http://127.0.0.1:3000/login/no-access",
+    );
+    expect(absolutePublicUrl("/", "pioneerdigitalai.com", "https")).toBe(
+      "https://pioneerdigitalai.com/login",
+    );
+    expect(absolutePublicUrl("/no-access", "evil.com/login", "https")).toBeNull();
+    expect(absolutePublicUrl("/no-access", "127.0.0.1:3000", "javascript")).toBeNull();
   });
 
   it("treats only sign-in and MFA as public inside the app", () => {
@@ -66,23 +78,36 @@ describe("form origin allowlist", () => {
 });
 
 describe("auth cookies", () => {
-  it("scopes the session to the mount and clears a host-wide cookie", () => {
-    const [scoped, clear] = scopedAuthCookies("sb-auth", "token", {
+  it("keeps one mount cookie so a name-keyed store cannot drop the session", () => {
+    const cookie = scopedAuthCookie("sb-auth", "token", {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       path: "/",
       domain: "pioneerdigitalai.com",
     });
-    expect(scoped).toMatchObject({
+    expect(cookie).toMatchObject({
       name: "sb-auth",
       value: "token",
       options: { path: "/login", httpOnly: true, secure: true, sameSite: "lax" },
     });
-    expect(scoped?.options.domain).toBeUndefined();
-    expect(clear).toMatchObject({ name: "sb-auth", value: "", options: { path: "/", maxAge: 0 } });
-    expect(clear?.options.domain).toBeUndefined();
-    expect(clear?.options.sameSite).toBe("lax");
+    expect(cookie.options.domain).toBeUndefined();
+
+    const jar = new Map<string, string>();
+    jar.set(cookie.name, cookie.value);
+    expect(jar.get("sb-auth")).toBe("token");
+  });
+
+  it("clears that same mount cookie on sign-out", () => {
+    const cookie = scopedAuthCookie("sb-auth", "", {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    expect(cookie.value).toBe("");
+    expect(cookie.options.path).toBe("/login");
+    expect(cookie.options.maxAge).toBe(0);
   });
 });
 

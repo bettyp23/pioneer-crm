@@ -1,10 +1,23 @@
 import "server-only";
 
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 
+import { absolutePublicUrl } from "@/lib/mount";
 import { can, isRole, type Permission, type Role } from "@/server/auth/permissions";
 import { createSupabaseServerClient } from "@/server/db/server-client";
+
+// Page renders redirect with an absolute same-host URL. A path-only RSC
+// redirect is prefixed by vinext's client on top of the basePath.
+export async function redirectToAppPath(appPath: string): Promise<never> {
+  const headerList = await headers();
+  const host = (headerList.get("x-forwarded-host") ?? headerList.get("host") ?? "")
+    .split(",")[0]
+    ?.trim();
+  const proto = (headerList.get("x-forwarded-proto") ?? "http").split(",")[0]?.trim() ?? "http";
+  redirect(absolutePublicUrl(appPath, host ?? "", proto) ?? appPath);
+}
 
 export type CurrentMember = {
   userId: string;
@@ -32,8 +45,8 @@ export const getClaims = cache(async () => {
 // Redirects otherwise. Call from every protected page, query and Server Action.
 export const requireMember = cache(async () => {
   const claims = await getClaims();
-  if (!claims) redirect("/");
-  if (claims.aal !== "aal2") redirect("/mfa");
+  if (!claims) return redirectToAppPath("/");
+  if (claims.aal !== "aal2") return redirectToAppPath("/mfa");
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -46,7 +59,9 @@ export const requireMember = cache(async () => {
     .maybeSingle();
 
   if (error) throw new Error(`Failed to load membership (${error.code})`);
-  if (!data || !data.workspace || !data.profile || !isRole(data.role)) redirect("/no-access");
+  if (!data || !data.workspace || !data.profile || !isRole(data.role)) {
+    return redirectToAppPath("/no-access");
+  }
 
   const member: CurrentMember = {
     userId: claims.sub,

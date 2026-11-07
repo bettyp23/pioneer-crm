@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MfaEnroll } from "@/features/auth/components/mfa-enroll";
 import { MfaVerify } from "@/features/auth/components/mfa-verify";
-import { getClaims, getSupabase } from "@/server/auth/session";
+import { getClaims, getSupabase, redirectToAppPath } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "Two-step verification" };
 
 export default async function MfaPage() {
   const claims = await getClaims();
-  if (!claims) redirect("/");
-  if (claims.aal === "aal2") redirect("/dashboard");
+  if (!claims) return redirectToAppPath("/");
+  if (claims.aal === "aal2") return redirectToAppPath("/dashboard");
 
   const supabase = await getSupabase();
   const { data, error } = await supabase.auth.mfa.listFactors();

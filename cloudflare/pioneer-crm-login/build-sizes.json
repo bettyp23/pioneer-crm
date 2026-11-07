@@ -1,0 +1,17 @@
+{
+  "worker": "pioneer-crm-login",
+  "measuredFrom": "local vite build with placeholder public env; do not upload this output",
+  "uncompressedScriptModulesBytes": 4604976,
+  "javascriptFiles": 145,
+  "javascriptBytes": 2771051,
+  "wasmFiles": 56,
+  "wasmBytes": 1833925,
+  "perFileGzipSumBytes": 1601357,
+  "staticAssetFiles": 44,
+  "staticAssetBytes": 1072657,
+  "mainModule": "index.js",
+  "mainModuleBytes": 209,
+  "declaredWasmModules": 56,
+  "publishedUncompressedLimitBytes": 67108864,
+  "limitNote": "64 MiB uncompressed applies to both Workers plans as of the 2026-09-04 Cloudflare changelog. Account settings did not identify Free or Paid."
+}

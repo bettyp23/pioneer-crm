@@ -1,9 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // E2E against the local Supabase stack (`npm run db:start && npm run db:reset` first).
-// CI runs the production build; locally an already-running `npm run dev` is reused.
+// CI serves the already built vinext Worker (`vite preview`), not `next start`.
+// The workflow runs `npm run build:vinext` first. Locally, `npm run dev` is reused.
 const isCI = !!process.env.CI;
-const baseURL = "http://localhost:3000";
+const baseURL = "http://127.0.0.1:3000";
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -28,7 +29,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: isCI ? "npm run build && npm run start" : "npm run dev",
+    command: isCI ? "npx vite preview --host 127.0.0.1 --port 3000 --strictPort" : "npm run dev",
     url: `${baseURL}/login`,
     reuseExistingServer: !isCI,
     timeout: 180_000,

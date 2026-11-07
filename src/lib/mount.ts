@@ -13,6 +13,16 @@ export function publicPath(appPath: string): string {
   return appPath === "/" ? APP_BASE_PATH : `${APP_BASE_PATH}${appPath}`;
 }
 
+// vinext's RSC client adds basePath again when the redirect header is already
+// `/login/...`, which requests `/login/login/no-access`. An absolute URL on the
+// request host is stripped once and prefixed once. Server actions already
+// receive a single prefix, so they stay on relative app paths.
+export function absolutePublicUrl(appPath: string, host: string, proto: string): string | null {
+  if (proto !== "http" && proto !== "https") return null;
+  if (!/^[A-Za-z0-9.-]+(?::\d+)?$/.test(host)) return null;
+  return `${proto}://${host}${publicPath(appPath)}`;
+}
+
 /** Public pathname. /login-other is not the mount. */
 export function isLoginMountPath(pathname: string): boolean {
   return pathname === APP_BASE_PATH || pathname.startsWith(`${APP_BASE_PATH}/`);
@@ -43,23 +53,18 @@ type CookieOptions = {
   partitioned?: boolean;
 };
 
-// Session cookies are host-only and limited to the mount, so the marketing
-// site does not receive them. A matching Path=/ cookie from the previous
-// deploy is cleared. SameSite and HttpOnly are left as the auth library set them.
-export function scopedAuthCookies(
+// One Set-Cookie per name. Next's cookie map is keyed only by name, so a second
+// write (including a Path=/ clear of the same name) replaces the session and
+// the browser never reaches /login/mfa. Path stays /login. SameSite and
+// HttpOnly are whatever the auth library passed.
+export function scopedAuthCookie(
   name: string,
   value: string,
   options: CookieOptions = {},
-): { name: string; value: string; options: CookieOptions }[] {
+): { name: string; value: string; options: CookieOptions } {
   const scoped: CookieOptions = { ...options, path: APP_BASE_PATH };
   delete scoped.domain;
-  const clearHost: CookieOptions = { ...options, path: "/", maxAge: 0 };
-  delete clearHost.domain;
-  delete clearHost.expires;
-  return [
-    { name, value, options: scoped },
-    { name, value: "", options: clearHost },
-  ];
+  return { name, value, options: scoped };
 }
 
 // Same-host bookmarks from before the mount. Destinations stay relative so the

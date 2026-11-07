@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { APP_BASE_PATH, isPublicAppPath, scopedAuthCookies } from "@/lib/mount";
+import { APP_BASE_PATH, isPublicAppPath, scopedAuthCookie } from "@/lib/mount";
 import { buildCsp } from "@/lib/security/csp";
 
 // Runs before every page request:
@@ -11,6 +11,15 @@ import { buildCsp } from "@/lib/security/csp";
 // This is a coarse gate only. Authorization happens in requireMember() and in RLS.
 
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get("host")?.split(":")[0]?.toLowerCase();
+  if (host === "www.pioneerdigitalai.com") {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    url.hostname = "pioneerdigitalai.com";
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   const nonce = btoa(crypto.randomUUID());
   const csp = buildCsp({
     nonce,
@@ -27,7 +36,7 @@ export async function proxy(request: NextRequest) {
 
   let response = NextResponse.next({ request: { headers: forwardHeaders() } });
   let cacheHeaders: Record<string, string> = {};
-  let pendingCookies: ReturnType<typeof scopedAuthCookies> = [];
+  let pendingCookies: ReturnType<typeof scopedAuthCookie>[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -39,9 +48,9 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
-          pendingCookies = cookiesToSet.flatMap(({ name, value, options }) => {
+          pendingCookies = cookiesToSet.map(({ name, value, options }) => {
             request.cookies.set(name, value);
-            return scopedAuthCookies(name, value, options);
+            return scopedAuthCookie(name, value, options);
           });
           response = NextResponse.next({ request: { headers: forwardHeaders() } });
           for (const cookie of pendingCookies) {

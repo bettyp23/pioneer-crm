@@ -8,10 +8,10 @@ Pioneer Digital AI custom CRM (Next.js + Supabase)
 back through the worker on the owner's Mac (`npm run worker`), so the Mac must be on for replies.
 
 The app is mounted at `/login` (`basePath`), including its assets. Public sign-in is
-`/login`, the code page is `/login/mfa`, and the chat is `/login/dashboard`. On the marketing
-domain that is `https://pioneerdigitalai.com/login` once the path proxy in
-[cloudflare/login-proxy](cloudflare/login-proxy/README.md) is deployed. The Vercel host stays
-`https://pioneer-crm-two.vercel.app/login` and is not redirected to the public domain.
+`/login`, the code page is `/login/mfa`, and the chat is `/login/dashboard`. The native
+Cloudflare Worker is `pioneer-crm-login` (`cloudflare.config.ts`). Attach
+`pioneerdigitalai.com/login` and `pioneerdigitalai.com/login/*` only after the Worker build
+and GitHub CI pass. Do not route `/`, `/_next`, or `/api`.
 
 Install it as an app: on iPhone open the site in Safari → Share → **Add to Home Screen**; on a
 laptop use Chrome/Edge → the install icon in the address bar.
