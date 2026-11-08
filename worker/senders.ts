@@ -18,7 +18,7 @@ export function claudePayload(job: { id: string; payload: Record<string, unknown
   });
 }
 
-// What Michael Scott's webhook receives (docs/runbooks/m8-setup.md §3).
+// What Michael Scott's webhook receives (m8-setup runbook §3, archive/full-pioneer-os branch).
 export function grokPayload(job: { id: string; payload: Record<string, unknown> }, code: string) {
   return {
     job_id: job.id,

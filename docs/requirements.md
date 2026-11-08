@@ -146,7 +146,7 @@ recordings of key flows, migration list, and an updated limitations list.
 
 | Milestone | Accepted when |
 |---|---|
-| M1 Foundation | See [milestone-1-plan.md](milestone-1-plan.md) §5. |
+| M1 Foundation | See the M1 plan (on the `archive/full-pioneer-os` branch) §5. |
 | M2 Clients & pipeline | FR-CLI/CON/LEAD/ACT/FU satisfied; RLS tests for every new table; E2E: create client → contact → lead → move stage → log activity → complete follow-up. |
 | M3 Catalog & blueprints | FR-SVC/BP satisfied; DB tests prove published versions and their templates reject updates/deletes; cycle detection tested. |
 | M4 Projects | FR-SOW/PRJ/TASK/INP/APR satisfied; tests for idempotent generation (concurrent double-submit), blocked transitions, approval gating, SOW immutability. |

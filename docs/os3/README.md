@@ -1,5 +1,11 @@
 # Pioneer OS 3.0: review and plan
 
+> **Status 2026-11-08:** this Hermes plan is the current direction again (decision D-37), now as
+> eight steps in [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md). Changes since this page
+> was written: Grok is back (Michael Scott on a Grok model via OpenRouter, alongside Claude);
+> the eight-role roster is replaced by two bots for now; `main` ships only sign-in and the
+> Michael chat (D-38). The assessment below describes October 2026 and is kept for reference.
+
 Written 2026-10-21 for the owner of Pioneer Digital, and for any engineer or agent who later
 works on this repository. This page is the short answer; the linked documents hold the detail.
 
@@ -145,7 +151,7 @@ Phase 6 (M16 self-improvement).
 
 ## 9. First small, safe milestone: M7 (built)
 
-[milestone-7-plan.md](../milestone-7-plan.md). Reversible, local only, no external accounts:
+The M7 plan is on the `archive/full-pioneer-os` branch. Reversible, local only, no external accounts:
 
 - the eight 3.0 roles (your existing agents were renamed in place, so instructions and history are kept);
 - Grok and Perplexity removed (OpenRouter takes over the $50 xAI cap);
