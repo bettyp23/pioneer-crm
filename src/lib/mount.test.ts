@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,7 +9,7 @@ import {
   legacyMountRedirects,
   PUBLISHED_SITE_ORIGIN,
   publicPath,
-  scopedAuthCookies,
+  scopedAuthCookie,
 } from "@/lib/mount";
 
 describe("login mount paths", () => {
@@ -66,23 +67,36 @@ describe("form origin allowlist", () => {
 });
 
 describe("auth cookies", () => {
-  it("scopes the session to the mount and clears a host-wide cookie", () => {
-    const [scoped, clear] = scopedAuthCookies("sb-auth", "token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      domain: "pioneerdigitalai.com",
-    });
-    expect(scoped).toMatchObject({
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax" as const,
+    path: "/",
+    domain: "pioneerdigitalai.com",
+  };
+
+  it("scopes the session to the mount, host-only", () => {
+    const cookie = scopedAuthCookie("sb-auth", "token", options);
+    expect(cookie).toMatchObject({
       name: "sb-auth",
       value: "token",
       options: { path: "/login", httpOnly: true, secure: true, sameSite: "lax" },
     });
-    expect(scoped?.options.domain).toBeUndefined();
-    expect(clear).toMatchObject({ name: "sb-auth", value: "", options: { path: "/", maxAge: 0 } });
-    expect(clear?.options.domain).toBeUndefined();
-    expect(clear?.options.sameSite).toBe("lax");
+    expect(cookie.options.domain).toBeUndefined();
+  });
+
+  // Regression: a second same-name "clear" entry overwrote the session in the response
+  // (Next keeps the last set() per name), so a successful sign-in signed the user out.
+  it("survives being written to a Next.js response", () => {
+    const response = NextResponse.next();
+    const cookie = scopedAuthCookie("sb-auth", "token", options);
+    response.cookies.set(cookie.name, cookie.value, cookie.options);
+    expect(response.cookies.get("sb-auth")?.value).toBe("token");
+    const header = response.headers.getSetCookie();
+    expect(header).toHaveLength(1);
+    expect(header[0]).toContain("sb-auth=token");
+    expect(header[0]).toContain("Path=/login");
+    expect(header[0]).not.toMatch(/Max-Age=0/i);
   });
 });
 
