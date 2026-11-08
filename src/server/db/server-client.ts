@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { publicEnv } from "@/lib/env";
-import { APP_BASE_PATH, scopedAuthCookies } from "@/lib/mount";
+import { APP_BASE_PATH, scopedAuthCookie } from "@/lib/mount";
 import type { Database } from "@/server/db/database.types";
 
 export type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -26,9 +26,8 @@ export async function createSupabaseServerClient() {
         setAll(cookiesToSet) {
           try {
             for (const { name, value, options } of cookiesToSet) {
-              for (const cookie of scopedAuthCookies(name, value, options)) {
-                cookieStore.set(cookie.name, cookie.value, cookie.options);
-              }
+              const cookie = scopedAuthCookie(name, value, options);
+              cookieStore.set(cookie.name, cookie.value, cookie.options);
             }
           } catch {
             // Server Components cannot set cookies. src/proxy.ts refreshes the session

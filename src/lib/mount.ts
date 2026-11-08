@@ -44,22 +44,19 @@ type CookieOptions = {
 };
 
 // Session cookies are host-only and limited to the mount, so the marketing
-// site does not receive them. A matching Path=/ cookie from the previous
-// deploy is cleared. SameSite and HttpOnly are left as the auth library set them.
-export function scopedAuthCookies(
+// site does not receive them. SameSite and HttpOnly are left as the auth library set them.
+// Exactly one cookie per name: Next.js keeps only the last set() for a name in a response,
+// so a second "clear the old Path=/ copy" entry would overwrite the session and sign the
+// user straight back out. (Behind the proxy the worker rewrites every cookie to Path=/login
+// anyway, so such a clear could never reach a Path=/ cookie.)
+export function scopedAuthCookie(
   name: string,
   value: string,
   options: CookieOptions = {},
-): { name: string; value: string; options: CookieOptions }[] {
+): { name: string; value: string; options: CookieOptions } {
   const scoped: CookieOptions = { ...options, path: APP_BASE_PATH };
   delete scoped.domain;
-  const clearHost: CookieOptions = { ...options, path: "/", maxAge: 0 };
-  delete clearHost.domain;
-  delete clearHost.expires;
-  return [
-    { name, value, options: scoped },
-    { name, value: "", options: clearHost },
-  ];
+  return { name, value, options: scoped };
 }
 
 // Same-host bookmarks from before the mount. Destinations stay relative so the
