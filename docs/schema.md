@@ -290,7 +290,7 @@ Reporting views (`security_invoker = true`): `pipeline_summary`, `project_health
 ## 8. Milestone 6 — AI Command Center + Approval Center (as built)
 
 Migration `20261021000100_ai_command_center.sql`; tests `supabase/tests/009_ai_command_center.test.sql`.
-Re-scoped by D-19 (see docs/milestone-6-plan.md). As built:
+Re-scoped by D-19 (M6 plan on the `archive/full-pioneer-os` branch). As built:
 
 | Table | Notes |
 |---|---|
@@ -327,7 +327,7 @@ docs/os3/.
 
 Migrations `20261025000100_m8_job_waiting_status.sql` (enum value, separate transaction) and
 `20261025000200_pioneer_loop.sql`; tests `supabase/tests/011_pioneer_loop.test.sql`. Decisions
-D-29, D-30, D-33…D-36; plan in docs/milestone-8-plan.md.
+D-29, D-30, D-33…D-36; plan on the `archive/full-pioneer-os` branch (docs/milestone-8-plan.md).
 
 | Object | Notes |
 |---|---|

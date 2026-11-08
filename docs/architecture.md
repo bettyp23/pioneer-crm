@@ -43,7 +43,7 @@ Principles:
 ## 2. Technology
 
 Exact versions are pinned in `package.json`/lockfile and verified at implementation time
-(see milestone-1-plan.md §2). Baseline expectations as of 2026-10:
+(see the M1 plan on the `archive/full-pioneer-os` branch). Baseline expectations as of 2026-10:
 
 | Concern | Choice | Notes |
 |---|---|---|

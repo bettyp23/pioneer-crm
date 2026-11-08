@@ -17,20 +17,34 @@ Install it as an app: on iPhone open the site in Safari → Share → **Add to H
 laptop use Chrome/Edge → the install icon in the address bar.
 
 The full CRM (clients, pipeline, projects, operations, agents, settings) is kept on the
-`archive/full-pioneer-os` branch. The database schema and worker are unchanged, so those pages
-can be brought back without data loss. The docs below describe the full system.
+`archive/full-pioneer-os` branch, together with the old milestone plans and the 4.0 (Grok
+webhook) plan. The database schema is unchanged, so those pages can be brought back without
+data loss.
 
-Pioneer OS is a private, internal CRM and service-operations platform. Start with the docs:
+## Next: Hermes
+
+Michael Scott and Claude move to **Hermes** (models through OpenRouter), first on the Mac, then on
+a Hostinger VPS, connected back to this app. The eight steps and what each needs are in
+[docs/os3/IMPLEMENTATION_ROADMAP.md](docs/os3/IMPLEMENTATION_ROADMAP.md); the direction is
+decision D-37 in [docs/decisions.md](docs/decisions.md). Until step 7, the chat keeps using the
+current worker connection (Grok webhook → "Pioneer Results" Drive folder).
+
+## Docs
+
+Pioneer OS is a private, internal CRM and service-operations platform. Requirements,
+architecture and security describe the full system; only sign-in and the chat are live now.
 
 - [Requirements](docs/requirements.md)
 - [Architecture](docs/architecture.md) (includes the screen map)
 - [Schema](docs/schema.md)
 - [Security](docs/security.md)
 - [Decisions and open questions](docs/decisions.md)
-- [Milestone 1 plan](docs/milestone-1-plan.md) · [Milestone 2 plan](docs/milestone-2-plan.md) · [Milestone 3 plan](docs/milestone-3-plan.md) · [Milestone 4 plan](docs/milestone-4-plan.md) · [Milestone 5 plan](docs/milestone-5-plan.md) · [Milestone 6 plan](docs/milestone-6-plan.md) · [Milestone 7 plan](docs/milestone-7-plan.md)
-- **Pioneer OS 3.0** (Hermes, integrations, roadmap): [overview](docs/os3/README.md) · [setup and purchasing guide](docs/os3/PIONEER_OS_SETUP_GUIDE.md)
+- **Hermes plan** (architecture, agents, approvals, roadmap): [overview](docs/os3/README.md) ·
+  [roadmap: the eight steps](docs/os3/IMPLEMENTATION_ROADMAP.md) ·
+  [setup and purchasing guide](docs/os3/PIONEER_OS_SETUP_GUIDE.md)
 - Runbooks: [local development](docs/runbooks/local-development.md) ·
-  [bootstrap the owner](docs/runbooks/bootstrap-owner.md)
+  [bootstrap the owner](docs/runbooks/bootstrap-owner.md) ·
+  [hosted setup](docs/runbooks/hosted-setup.md) · [worker](docs/runbooks/worker.md)
 
 ## Quick start (local)
 

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
 // Read-only Google access as the service account shared as Viewer on the Agency Dashboard sheet
-// and the "Pioneer Results" folder (docs/runbooks/m8-setup.md). Scopes are read-only; the account
+// and the "Pioneer Results" folder (m8-setup runbook, archive/full-pioneer-os branch). Scopes are read-only; the account
 // can only see what was shared with it.
 
 const SCOPE = [
@@ -94,7 +94,7 @@ export class SheetReader {
   }
 }
 
-// Columns: written_at | job_id | code | from | kind | client | text (docs/runbooks/m8-setup.md §2)
+// Columns: written_at | job_id | code | from | kind | client | text (m8-setup runbook §2)
 export type ResultRow = {
   rowKey: string;
   jobId: string | null;
