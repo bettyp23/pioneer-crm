@@ -15,6 +15,7 @@ prefix:
 | `/login/dashboard` | Chat with Michael |
 | `/login/no-access` | Signed in, no workspace |
 | `/login/auth/sign-out` | POST sign-out |
+| `/login/api/reply` | POST Michael's reply (`Authorization` is forwarded) |
 | `/login/_next/*` | This app's JS and CSS |
 | `/login/manifest.webmanifest` | Install manifest, scope `/login/` |
 

@@ -4,8 +4,9 @@ Pioneer Digital AI custom CRM (Next.js + Supabase)
 ## Current version: minimal (chat with Michael)
 
 `main` is deliberately cut down to one page: sign in (email + password + 6-digit code), then the
-**Dashboard**, which is a direct chat with Michael Scott (Grok). Messages go out and replies come
-back through the worker on the owner's Mac (`npm run worker`), so the Mac must be on for replies.
+**Dashboard**, which is a direct chat with Michael Scott (Grok). The hosted app sends each
+message and takes his reply at `POST /login/api/reply`. The Mac worker (`npm run worker`) can
+still run alongside it; a message is delivered once.
 
 The app is mounted at `/login` (`basePath`), including its assets. Public sign-in is
 `/login`, the code page is `/login/mfa`, and the chat is `/login/dashboard`. On the marketing
@@ -70,7 +71,10 @@ See [.env.example](.env.example).
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | app (browser + server) | Supabase API URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | app (browser + server) | Publishable key; RLS protects data |
-| `SUPABASE_SECRET_KEY` | `bootstrap:owner` only | Bypasses RLS. Never in the app runtime, never `NEXT_PUBLIC_` |
+| `SUPABASE_SECRET_KEY` | Vercel (Preview and Production) and `bootstrap:owner` | Supabase secret key, also called the service_role key. The hosted relay uses it. `SUPABASE_SERVICE_ROLE_KEY` is accepted as the same value. Never `NEXT_PUBLIC_`, never logged |
+| `GROK_WEBHOOK_URL` | Vercel (Preview and Production). The Mac worker reads the same name from `.env.worker` | Michael Scott's webhook, https only |
+| `GROK_WEBHOOK_KEY` | Vercel (Preview and Production) and `.env.worker` | Bearer token for that webhook |
+| `PIONEER_REPLY_KEY` | Vercel (Preview and Production), and the same value on Michael's side | Bearer token for `POST /login/api/reply` |
 | `BOOTSTRAP_*` | `bootstrap:owner` only | Owner email/name, workspace name/slug |
 
 ## Working rules

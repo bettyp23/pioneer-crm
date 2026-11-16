@@ -21,6 +21,7 @@ describe("worker mount", () => {
     expect(APP_MOUNT).toBe(APP_BASE_PATH);
     expect(isLoginMountPath("/login")).toBe(true);
     expect(isLoginMountPath("/login/dashboard")).toBe(true);
+    expect(isLoginMountPath("/login/api/reply")).toBe(true);
     expect(isLoginMountPath("/login-other")).toBe(false);
     expect(isLoginMountPath("/_next/static/a.js")).toBe(false);
   });
@@ -105,6 +106,22 @@ describe("worker mount", () => {
     );
     expect(rewritten).toBe("sb-auth=token; Path=/login; HttpOnly; Secure; SameSite=Lax");
     expect(rewritten.toLowerCase()).not.toContain("domain=");
+  });
+
+  it("forwards the reply bearer token for /login/api/reply", async () => {
+    const fetchImpl = vi.fn<FetchImpl>(async () => jsonResponse(200));
+    await handleLoginProxy(
+      new Request("https://pioneerdigitalai.com/login/api/reply", {
+        method: "POST",
+        headers: { authorization: "Bearer reply-key", "content-type": "application/json" },
+        body: "{}",
+      }),
+      {},
+      fetchImpl,
+    );
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(`${UPSTREAM_ORIGIN}/login/api/reply`);
+    const headers = new Headers(fetchImpl.mock.calls[0]?.[1]?.headers);
+    expect(headers.get("authorization")).toBe("Bearer reply-key");
   });
 
   it("does not forward the session cookie when falling through to Pages", async () => {

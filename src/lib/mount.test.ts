@@ -37,13 +37,15 @@ describe("login mount paths", () => {
     expect(publicPath("/auth/sign-out")).toBe("/login/auth/sign-out");
   });
 
-  it("treats only sign-in and MFA as public inside the app", () => {
+  it("treats sign-in, MFA, and the reply webhook as public inside the app", () => {
     expect(isPublicAppPath("/")).toBe(true);
     expect(isPublicAppPath("/mfa")).toBe(true);
     expect(isPublicAppPath("/mfa/extra")).toBe(true);
+    expect(isPublicAppPath("/api/reply")).toBe(true);
     expect(isPublicAppPath("/dashboard")).toBe(false);
     expect(isPublicAppPath("/no-access")).toBe(false);
     expect(isPublicAppPath("/settings/workspace")).toBe(false);
+    expect(isPublicAppPath("/api/other")).toBe(false);
   });
 });
 
