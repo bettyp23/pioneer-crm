@@ -1,10 +1,11 @@
 # Hosted Pioneer (Vercel + Supabase) with the worker on your Mac
 
 The Vercel site (`pioneer-crm-two.vercel.app`) is the real Pioneer: you use it from your phone or
-laptop. The hosted Supabase project holds the real data. The worker runs on your Mac and connects
-to the hosted database over TLS, as the restricted `pioneer_worker` role, so messages you write
-on the site reach Pioneer (Claude) and Michael Scott while your Mac is awake. The copy on your
-Mac (`npm run dev`, local database) stays for testing.
+laptop. The hosted Supabase project holds the real data. Michael Scott messages are sent by the
+app itself, and his replies come back to `POST /login/api/reply` (see below). The Mac worker is
+still how Claude messages go out and how a Pioneer Results file gets into the chat. It can also
+send to Michael; if it is running at the same time as the app, only one of them sends each
+message. The copy on your Mac (`npm run dev`, local database) stays for testing.
 
 ```mermaid
 flowchart LR
@@ -17,6 +18,47 @@ flowchart LR
 ```
 
 Never paste a password, key, token or connection string into a chat.
+
+## Hosted relay (Michael Scott, no Mac)
+
+Apply migration `supabase/migrations/20261116000100_hosted_relay.sql` to the hosted database
+before the relay can call it. Then set these names on the Vercel project (Preview to try it,
+Production only when you mean to turn it on). Values stay in the dashboard. Do not put them in
+the repo or in a chat.
+
+| Name | Where |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Vercel. Already set for the app. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Vercel. Already set for the app. |
+| `SUPABASE_SECRET_KEY` | Vercel. The Supabase secret key (service_role). `SUPABASE_SERVICE_ROLE_KEY` is the same value if that is the name already stored. Set one. |
+| `GROK_WEBHOOK_URL` | Vercel. Same https webhook the Mac worker uses. |
+| `GROK_WEBHOOK_KEY` | Vercel. Bearer token for that webhook. |
+| `PIONEER_REPLY_KEY` | Vercel, and the same value wherever Michael sends the reply. A long random string. |
+
+Reply request, on the deployment that has the key (preview host, or
+`https://pioneerdigitalai.com` once this is in production):
+
+```
+POST /login/api/reply
+Authorization: Bearer <PIONEER_REPLY_KEY>
+Content-Type: application/json
+
+{
+  "job_id": "<uuid from the webhook>",
+  "code": "<one-time code from the webhook>",
+  "from": "michael_scott",
+  "kind": "result",
+  "text": "<the reply shown in the dashboard>"
+}
+```
+
+`kind` may also be `needs_decision`. `client` is optional. The response is JSON
+`{ "outcome": "accepted" }`, `"duplicate"`, or `"ignored: <reason>"` (wrong code, expired, and
+the other reasons `worker.accept_result` already returns). A bad key is `401`. The login proxy
+forwards `Authorization` on `/login/*`.
+
+If `GROK_WEBHOOK_URL` or `GROK_WEBHOOK_KEY` or the Supabase secret is missing, the app leaves the
+message queued. It does not fail the job.
 
 ## 1. Supabase dashboard (your project)
 

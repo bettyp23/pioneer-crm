@@ -1,8 +1,12 @@
 # Running the Pioneer worker (M8)
 
 The worker is a small program on your Mac. Every 5 seconds it sends new messages to Pioneer
-(Claude) or Michael Scott (Grok); every 60 seconds it reads the **Pioneer Results** tab and puts
-replies into the chat. It doesn't run agent code or shell commands.
+(Claude) or Michael Scott (Grok); every 60 seconds it reads the **Pioneer Results** folder and
+puts replies into the chat. It doesn't run agent code or shell commands.
+
+Michael Scott messages from the dashboard are also sent by the hosted app, and his replies can
+come back to `POST /login/api/reply` ([hosted setup](hosted-setup.md)). Leave this worker off and
+that path still runs. If both run, a message is sent once: whichever claims it first sends it.
 
 ## Once
 
@@ -27,7 +31,8 @@ one-time codes or message text.
 
 - `"claude": false` / `"grok": false` / `"sheet": false` at start-up means that connection's
   settings are missing from `.env.worker`. Sends to it fail with a clear reason in the chat.
-- Your Mac must be awake. Sends wait in the queue while it sleeps; replies wait in the sheet.
+- Your Mac must be awake for this program to run. Claude sends and sheet replies wait while it
+  sleeps. Michael Scott sends from the dashboard do not wait on the Mac when the hosted relay is set.
 
 ## When something looks wrong
 

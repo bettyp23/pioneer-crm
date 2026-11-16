@@ -18,9 +18,16 @@ export function isLoginMountPath(pathname: string): boolean {
   return pathname === APP_BASE_PATH || pathname.startsWith(`${APP_BASE_PATH}/`);
 }
 
-/** Pathname inside the app (Next proxy strips basePath). `/` is sign-in, not every path. */
+/** Pathname inside the app (Next proxy strips basePath). `/` is sign-in, not every path.
+ * `/api/reply` is Michael's reply webhook: it authenticates with PIONEER_REPLY_KEY, not a session.
+ */
 export function isPublicAppPath(pathname: string): boolean {
-  return pathname === "/" || pathname === "/mfa" || pathname.startsWith("/mfa/");
+  return (
+    pathname === "/" ||
+    pathname === "/mfa" ||
+    pathname.startsWith("/mfa/") ||
+    pathname === "/api/reply"
+  );
 }
 
 // Sign-out is a cookie-authenticated POST. Allow the host the browser is on,

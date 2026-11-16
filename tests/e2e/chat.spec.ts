@@ -3,9 +3,9 @@ import pg from "pg";
 
 import { gotoHydrated, localDbUrl, USERS } from "./fixtures";
 
-// Minimal Pioneer OS: the dashboard is one chat with Michael Scott (Grok). No worker runs in
-// these tests, so sends stay queued; the test cancels them at the end so a real worker started
-// later on the same database never sends them.
+// Minimal Pioneer OS: the dashboard is one chat with Michael Scott (Grok). CI does not set the
+// hosted relay (no webhook env), and no Mac worker runs, so sends stay queued. The test cancels
+// them at the end so a real worker started later on the same database never sends them.
 
 const unique = () => Date.now().toString(36);
 

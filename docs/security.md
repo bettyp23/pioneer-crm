@@ -68,7 +68,9 @@ Role matrix (initial):
 | Secret | Where it lives | Never |
 |---|---|---|
 | Supabase publishable key, URL | Vercel env, `NEXT_PUBLIC_*` | — (public by design; RLS protects data) |
-| Supabase secret (service-role) key | Owner's password manager; local `.env.local` only when running `bootstrap-owner`; **not** in Vercel runtime env unless a later reviewed feature needs it | `NEXT_PUBLIC_*`, repo, logs, AI tools |
+| Supabase secret (service-role) key (`SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`) | Owner's password manager; Vercel runtime for the hosted relay; local `.env.local` only while bootstrapping or testing the relay | `NEXT_PUBLIC_*`, repo, logs, AI tools |
+| `GROK_WEBHOOK_URL`, `GROK_WEBHOOK_KEY` | Vercel runtime and the Mac worker's `.env.worker` | Repo, logs, chat |
+| `PIONEER_REPLY_KEY` | Vercel runtime and Michael Scott's reply caller | Repo, logs, chat |
 | `CRON_SECRET` (M5) | Vercel env (production, staging separately) | Repo |
 | DB password | Password manager; CI secret for staging migrations | Repo, chat tools |
 

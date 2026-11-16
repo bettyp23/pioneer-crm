@@ -15,13 +15,17 @@ import { listConnectionBrakes, listMessages } from "@/features/chat/server/queri
 import { formatDateTime } from "@/lib/format";
 import { can } from "@/server/auth/permissions";
 import { requireMember } from "@/server/auth/session";
+import { scheduleGrokDispatch } from "@/server/relay/schedule";
 
 export const metadata: Metadata = { title: "Dashboard" };
+// The webhook call runs in after() and needs longer than the platform default.
+export const maxDuration = 60;
 
-// The whole app: one chat with Michael Scott (Grok). Messages are sent by the worker on the
-// owner's Mac, and his replies come back the same way.
+// One chat with Michael Scott (Grok). Sending and replies run on the host. The Mac worker can
+// still do the same work; a message is delivered once.
 export default async function DashboardPage() {
   const { member } = await requireMember();
+  scheduleGrokDispatch();
   const [messages, brakes, pause] = await Promise.all([
     listMessages(),
     listConnectionBrakes(),
@@ -35,7 +39,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title="Michael Scott"
-        description="Your direct line to Michael. Replies arrive here while your Mac is on with the worker running."
+        description="Your direct line to Michael. A message goes out when you send it, and his reply shows up here."
       />
       {pause.pausedAt ? (
         <AiPauseControl

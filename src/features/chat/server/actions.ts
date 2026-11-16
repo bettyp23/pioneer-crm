@@ -8,12 +8,14 @@ import type { ActionResult } from "@/lib/action-result";
 import { SENSITIVITY_LABELS, scanForSensitiveContent } from "@/lib/ai/sensitivity";
 import { authorizeAction } from "@/server/auth/action-context";
 import { toUserMessage } from "@/server/db/errors";
+import { scheduleGrokDispatch } from "@/server/relay/schedule";
 
 const firstIssue = (e?: z.ZodError) => e?.issues[0]?.message ?? "Invalid input";
 
 // The message leaves Pioneer (to Claude or Michael Scott), so it is scanned first. Flagged text
 // is only sent after the owner sees the warning and confirms; the database records that it was
-// flagged. The send itself happens in the worker, never here.
+// flagged. A Michael Scott send is dispatched after this response; the Mac worker can do the
+// same job and will not send it twice.
 export async function sendMessage(
   input: unknown,
 ): Promise<ActionResult<{ sent: boolean; warnings: string[] }>> {
@@ -35,6 +37,7 @@ export async function sendMessage(
     p_flagged: warnings.length > 0,
   });
   if (error) return { ok: false, error: toUserMessage(error, "message.send") };
+  if (recipient === "michael_scott") scheduleGrokDispatch();
   revalidatePath("/dashboard");
   return { ok: true, data: { sent: true, warnings } };
 }

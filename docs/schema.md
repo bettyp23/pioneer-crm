@@ -339,6 +339,7 @@ D-29, D-30, D-33…D-36; plan in docs/milestone-8-plan.md.
 | `result_rows` | Every sheet row the worker processed, keyed by the SHA-256 of its content; `accepted` or `ignored` with a reason. Rows for unknown jobs have no workspace and aren't visible in the app. |
 | `messages` | One conversation per workspace. Author `owner`/`pioneer`/`michael_scott`/`system`; owner messages carry `author_user_id` and `recipient` (`auto`, `claude`, `michael_scott`); kind `message`/`answer`/`routed`/`result`/`needs_decision`/`notice`; body 1–20 000 chars; `flagged` when sent after the sensitive-content warning. Viewer-readable; no direct writes, edits or deletes. |
 | `send_message(ws, body, recipient, flagged)` | Owner/admin + MFA. Inserts the message and one at-most-once job (`claude.task` for auto/claude with `mode` auto/answer, `grok.dispatch` for michael_scott) in one transaction; audited `message.sent` with length only. |
+| Hosted relay (`20261116000100`) | `worker.claim_grok_jobs` claims only `grok.dispatch` (at most 5). `public.relay_claim_grok_jobs`, `relay_begin_dispatch`, `relay_mark_waiting`, `relay_fail_job`, `relay_accept_result` are security invoker and granted only to `service_role`. They call the existing worker functions, so the one-time code, the loop brake and `accept_result` checks are unchanged. `service_role` still has no table grants on jobs or messages. |
 | schema `worker` (M8 additions) | `begin_dispatch(job, worker, code_sha256, wait_seconds)` → `ok`/`braked`/`already_sent`/`not_held`; `mark_waiting(job, worker, external_ref)`; `filter_new_rows(keys[])`; `accept_result(row_key, job, code, from, kind, client, text)` → `accepted`/`duplicate`/`ignored: <reason>` (checks job waiting, code hash, unused, unexpired, sender, kind; redacts key-like text; a Pioneer `route` in auto mode queues one `grok.dispatch`); `expire_waiting()` (fails overdue sends, posts a notice). |
 
 ## 9. Grants summary
@@ -346,7 +347,7 @@ D-29, D-30, D-33…D-36; plan in docs/milestone-8-plan.md.
 - `anon`: no privileges on any table, view, sequence or function in `public`.
 - `authenticated`: table privileges granted per table (typically `select, insert, update`
   with column lists); `delete` only where hard delete is intended. All gated by RLS.
-- `service_role`: used only by `scripts/bootstrap-owner.ts` and migrations.
+- `service_role`: bootstrap, migrations, and the hosted relay functions above. No table access to jobs or messages.
 - `alter default privileges` revokes automatic grants on new objects so every grant is explicit.
 
 ## 10. RLS policy template

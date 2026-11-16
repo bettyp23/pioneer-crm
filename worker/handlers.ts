@@ -29,11 +29,14 @@ export function sendersFor(cfg: WorkerConfig): Senders {
 
 export type Outcome = "sent" | "braked" | "not_held" | "failed" | "blocked";
 
+// What a send needs from the database. The Mac worker and the hosted relay both use this.
+export type DispatchDb = Pick<WorkerDb, "beginDispatch" | "markWaiting" | "failJob">;
+
 // One send. The one-time code exists only in memory here; the database stores its hash.
 export async function handleSend(
   job: ClaimedJob,
   worker: string,
-  db: WorkerDb,
+  db: DispatchDb,
   send: Senders,
   newCodeImpl: () => string = newCode,
 ): Promise<Outcome> {
