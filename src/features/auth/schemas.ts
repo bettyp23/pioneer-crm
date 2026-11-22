@@ -19,3 +19,21 @@ export const verifyEnrollmentSchema = totpCodeSchema.extend({
 export type VerifyEnrollmentInput = z.infer<typeof verifyEnrollmentSchema>;
 
 export type ActionResult = { ok: false; error: string } | undefined;
+
+export const MIN_PASSWORD_LENGTH = 12;
+
+// Accepting an emailed invite: the link's one-time token plus the new password.
+export const acceptInviteSchema = z
+  .object({
+    tokenHash: z.string().min(8).max(200),
+    password: z
+      .string()
+      .min(MIN_PASSWORD_LENGTH, `Use at least ${MIN_PASSWORD_LENGTH} characters`)
+      .max(72, "Use at most 72 characters"),
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, {
+    message: "The passwords don't match",
+    path: ["confirm"],
+  });
+export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;

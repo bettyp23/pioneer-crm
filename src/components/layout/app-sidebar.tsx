@@ -54,7 +54,11 @@ export function AppSidebar({
                 <SidebarMenuItem key={navItem.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === navItem.href}
+                    isActive={
+                      navItem.href === "/dashboard"
+                        ? pathname === navItem.href
+                        : pathname.startsWith(navItem.href)
+                    }
                     tooltip={navItem.label}
                   >
                     <Link href={navItem.href}>

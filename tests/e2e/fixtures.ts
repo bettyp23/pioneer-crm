@@ -20,7 +20,24 @@ export const USERS = {
     id: "00000000-0000-4000-8000-000000000003",
   },
   outsider: { email: "outsider@example.test", name: "Demo Outsider" },
+  // Client portal accounts: A = Northwind Example Bakery, B = Contoso Example Dental.
+  clientA: {
+    email: "clienta@example.test",
+    name: "Avery Example",
+    id: "00000000-0000-4000-8000-000000000005",
+    storage: "tests/e2e/.auth/client-a.json",
+  },
+  clientB: {
+    email: "clientb@example.test",
+    name: "Jordan Example",
+    id: "00000000-0000-4000-8000-000000000006",
+  },
 } as const;
+
+export const LOCAL_SUPABASE_URL = "http://127.0.0.1:54321";
+export const LOCAL_PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH";
 
 // Local stack's secret key, read from the running stack rather than committed.
 export function localSecretKey(): string {

@@ -18,9 +18,17 @@ export function isLoginMountPath(pathname: string): boolean {
   return pathname === APP_BASE_PATH || pathname.startsWith(`${APP_BASE_PATH}/`);
 }
 
-/** Pathname inside the app (Next proxy strips basePath). `/` is sign-in, not every path. */
+/**
+ * Pathname inside the app (Next proxy strips basePath). `/` is sign-in, not every path.
+ * `/welcome` is where an emailed invite link lands before any session exists.
+ */
 export function isPublicAppPath(pathname: string): boolean {
-  return pathname === "/" || pathname === "/mfa" || pathname.startsWith("/mfa/");
+  return (
+    pathname === "/" ||
+    pathname === "/mfa" ||
+    pathname.startsWith("/mfa/") ||
+    pathname === "/welcome"
+  );
 }
 
 // Sign-out is a cookie-authenticated POST. Allow the host the browser is on,

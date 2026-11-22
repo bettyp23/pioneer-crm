@@ -63,12 +63,34 @@ Role matrix (initial):
 | Hard delete | ✓ | | | |
 | Dispatch / accept agent work | ✓ | ✓ | | |
 
+### 3a. Client portal accounts (D-39)
+
+`profiles.role` is `admin` (staff) or `client`. New profiles default to `client`; the column is
+not granted to API users, so no one becomes `admin` through the app. Only `admin` accounts can
+be workspace members (trigger `workspace_members_admin_profile`), so staff rights above never
+reach a client.
+
+A client account is linked to one client record (`profiles.client_id`, set only by the owner
+through `attach_portal_user`). Under the same restrictive MFA (aal2) policy as staff, it can:
+
+| Table | Client can |
+|---|---|
+| projects, project_tasks | read rows of its own client |
+| approvals | read its own client's `approver_type = 'client'` rows |
+| client_files (+ storage bucket `client-files`) | read/download its own client's files |
+| client_requests | read its own; insert for its own client (status forced to `open`) |
+| approval_responses | insert a yes/no for its own pending approval (decides it) |
+| clients, contacts, leads, audit, chat, everything else | nothing (clients holds internal notes; the portal reads the name through `portal_client()`) |
+
+Proven by `supabase/tests/012_client_portal.test.sql` and `tests/e2e/portal.spec.ts`
+(including direct Supabase API calls with client A's own session).
+
 ## 4. Keys and secrets
 
 | Secret | Where it lives | Never |
 |---|---|---|
 | Supabase publishable key, URL | Vercel env, `NEXT_PUBLIC_*` | — (public by design; RLS protects data) |
-| Supabase secret (service-role) key | Owner's password manager; local `.env.local` only when running `bootstrap-owner`; **not** in Vercel runtime env unless a later reviewed feature needs it | `NEXT_PUBLIC_*`, repo, logs, AI tools |
+| Supabase secret (service-role) key | Owner's password manager; local `.env.local` when running `bootstrap-owner`; Vercel **server-only** env `SUPABASE_SECRET_KEY` once client invites go live (D-39) — used only by `src/server/auth/portal-invites.ts` for `inviteUserByEmail`, import-restricted by ESLint | `NEXT_PUBLIC_*`, repo, logs, AI tools, browser |
 | `CRON_SECRET` (M5) | Vercel env (production, staging separately) | Repo |
 | DB password | Password manager; CI secret for staging migrations | Repo, chat tools |
 

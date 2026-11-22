@@ -120,16 +120,24 @@ async function main() {
   {
     const { data, error } = await admin
       .from("profiles")
-      .select("user_id")
+      .select("user_id, role")
       .eq("user_id", userId)
       .maybeSingle();
     if (error) fail(`Could not read profile (${error.code})`);
     if (data) {
+      // The owner is the 'admin' account (client portal, D-39); older profiles predate roles.
+      if (data.role !== "admin") {
+        const { error: roleError } = await admin
+          .from("profiles")
+          .update({ role: "admin" })
+          .eq("user_id", userId);
+        if (roleError) fail(`Could not set the owner's account role (${roleError.code})`);
+      }
       outcomes.profile = "existing";
     } else {
       const { error: insertError } = await admin
         .from("profiles")
-        .insert({ user_id: userId, display_name: env.BOOTSTRAP_OWNER_DISPLAY_NAME });
+        .insert({ user_id: userId, display_name: env.BOOTSTRAP_OWNER_DISPLAY_NAME, role: "admin" });
       if (insertError) fail(`Could not create profile (${insertError.code})`);
       outcomes.profile = "created";
     }

@@ -3,12 +3,13 @@
 import { redirect } from "next/navigation";
 
 import {
+  acceptInviteSchema,
   signInSchema,
   totpCodeSchema,
   verifyEnrollmentSchema,
   type ActionResult,
 } from "@/features/auth/schemas";
-import { getClaims, getSupabase } from "@/server/auth/session";
+import { getClaims, getSupabase, homePath } from "@/server/auth/session";
 
 // Server Actions are public HTTP endpoints: every input is re-validated here.
 // Error messages are deliberately generic (no account enumeration; docs/security.md §2).
@@ -70,7 +71,7 @@ export async function verifyTotpEnrollment(input: unknown): Promise<ActionResult
     console.warn("auth.mfa_enroll_verify_failed", { code: error.code });
     return { ok: false, error: CODE_FAILED };
   }
-  redirect("/dashboard");
+  redirect(await homePath());
 }
 
 export async function verifyTotp(input: unknown): Promise<ActionResult> {
@@ -91,5 +92,43 @@ export async function verifyTotp(input: unknown): Promise<ActionResult> {
     console.warn("auth.mfa_verify_failed", { code: error.code });
     return { ok: false, error: CODE_FAILED };
   }
-  redirect("/dashboard");
+  redirect(await homePath());
+}
+
+const INVITE_FAILED =
+  "This invite link has expired or was already used. Ask Pioneer Digital AI to send a new one.";
+
+// Invite acceptance: the emailed link carries a one-time token. Verifying it here (on a button
+// press, not on page load) means email link scanners can't use it up. Then the new password is
+// set and the person continues to authenticator setup.
+export async function acceptInvite(input: unknown): Promise<ActionResult> {
+  const parsed = acceptInviteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form and try again." };
+  }
+
+  const supabase = await getSupabase();
+  const { error: verifyError } = await supabase.auth.verifyOtp({
+    token_hash: parsed.data.tokenHash,
+    type: "invite",
+  });
+  if (verifyError) {
+    console.warn("auth.invite_verify_failed", { code: verifyError.code });
+    return { ok: false, error: INVITE_FAILED };
+  }
+
+  const { error: passwordError } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+  if (passwordError) {
+    console.warn("auth.invite_password_failed", { code: passwordError.code });
+    return {
+      ok: false,
+      error:
+        passwordError.code === "weak_password"
+          ? "Choose a stronger password."
+          : "Could not save your password. Try again.",
+    };
+  }
+  redirect("/mfa");
 }

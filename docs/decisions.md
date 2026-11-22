@@ -61,7 +61,9 @@ Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless y
 
 - Member invitation flow is deferred; additional users would be provisioned by script.
 - No workspace switcher (single workspace).
-- No client portal.
+- Client portal (D-39, `feat/client-portal`): invite-only client accounts at `/login/portal`,
+  managed at `/login/dashboard/clients`. See docs/security.md §3a and
+  docs/runbooks/client-portal.md. No client password reset yet (use the Supabase dashboard).
 - No in-app MFA factor reset or password change yet; recovery via the Supabase dashboard
   (docs/runbooks/bootstrap-owner.md).
 - Users with audit history cannot be deleted (audit rows are immutable and reference them);

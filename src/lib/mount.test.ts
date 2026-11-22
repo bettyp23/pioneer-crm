@@ -44,6 +44,10 @@ describe("login mount paths", () => {
     expect(isPublicAppPath("/dashboard")).toBe(false);
     expect(isPublicAppPath("/no-access")).toBe(false);
     expect(isPublicAppPath("/settings/workspace")).toBe(false);
+    expect(isPublicAppPath("/welcome")).toBe(true);
+    expect(isPublicAppPath("/welcome/x")).toBe(false);
+    expect(isPublicAppPath("/portal")).toBe(false);
+    expect(isPublicAppPath("/portal/files")).toBe(false);
   });
 });
 
