@@ -32,6 +32,8 @@ export type WorkerDb = {
     text: string;
   }): Promise<string>;
   expireWaiting(): Promise<number>;
+  // Round trip that reads and changes nothing (hold mode and health).
+  ping(): Promise<void>;
   close(): Promise<void>;
 };
 
@@ -41,7 +43,14 @@ export function connect(databaseUrl: string, ca: string | null = null): WorkerDb
     connectionString: databaseUrl,
     ssl: ca ? { ca, rejectUnauthorized: true } : false,
     max: 2,
+    // A dropped network must surface as an error, not a query that waits forever.
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 30_000,
+    keepAlive: true,
+    idleTimeoutMillis: 60_000,
   });
+  // An idle connection that breaks shouldn't crash the process; the next query reconnects.
+  pool.on("error", () => undefined);
   const one = async <T>(sql: string, params: unknown[]): Promise<T> =>
     (await pool.query(sql, params)).rows[0]?.r as T;
   return {
@@ -76,6 +85,9 @@ export function connect(databaseUrl: string, ca: string | null = null): WorkerDb
         row.text,
       ]),
     expireWaiting: () => one("select worker.expire_waiting() as r", []),
+    async ping() {
+      await pool.query("select 1");
+    },
     close: () => pool.end(),
   };
 }
