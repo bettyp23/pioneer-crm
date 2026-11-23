@@ -12,6 +12,7 @@ function fakeDb(begin: BeginResult = "ok") {
     filterNewRows: vi.fn(),
     acceptResult: vi.fn(),
     expireWaiting: vi.fn(),
+    ping: vi.fn(),
     close: vi.fn(),
   } satisfies WorkerDb;
   return db;

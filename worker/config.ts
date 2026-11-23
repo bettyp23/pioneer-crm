@@ -31,6 +31,11 @@ const schema = z.object({
     .string()
     .regex(/^[A-Za-z0-9_-]{10,}$/)
     .optional(),
+  // "hold": connect and report healthy, but claim no jobs and send nothing (first start on a
+  // new host, maintenance). "run" (default): normal work.
+  WORKER_MODE: z.enum(["run", "hold"]).default("run"),
+  // File touched after every healthy loop; the container health check reads its age.
+  WORKER_HEARTBEAT_FILE: z.string().min(1).optional(),
 });
 
 export type WorkerConfig = {
@@ -41,6 +46,8 @@ export type WorkerConfig = {
   googleKeyFile: string | null;
   sheet: { sheetId: string; tab: string } | null;
   folder: { folderId: string } | null;
+  mode: "run" | "hold";
+  heartbeatFile: string | null;
 };
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): WorkerConfig {
@@ -78,5 +85,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       e.GOOGLE_SHEETS_KEY_FILE && e.AGENCY_RESULTS_FOLDER_ID
         ? { folderId: e.AGENCY_RESULTS_FOLDER_ID }
         : null,
+    mode: e.WORKER_MODE,
+    heartbeatFile: e.WORKER_HEARTBEAT_FILE ?? null,
   };
 }

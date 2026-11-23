@@ -13,7 +13,7 @@ export const WAIT_SECONDS = { "claude.task": 30 * 60, "grok.dispatch": 24 * 60 *
 export const newCode = () => randomBytes(24).toString("base64url");
 export const sha256Hex = (s: string) => createHash("sha256").update(s).digest("hex");
 
-// null when that connection isn't configured on this Mac.
+// null when that connection isn't configured for this worker.
 export type Senders = {
   claude: ((text: string) => Promise<SendResult>) | null;
   grok: ((body: ReturnType<typeof grokPayload>) => Promise<SendResult>) | null;
@@ -44,8 +44,8 @@ export async function handleSend(
       job.id,
       worker,
       isClaude
-        ? "CLAUDE_ROUTINE_URL/TOKEN are not set on this Mac"
-        : "GROK_WEBHOOK_URL/KEY are not set on this Mac",
+        ? "CLAUDE_ROUTINE_URL/TOKEN are not set for the worker"
+        : "GROK_WEBHOOK_URL/KEY are not set for the worker",
     );
     return "failed";
   }
