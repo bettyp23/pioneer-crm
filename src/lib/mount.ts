@@ -80,4 +80,12 @@ export const legacyMountRedirects = [
   { source: "/no-access", destination: "/login/no-access", permanent: false, basePath: false },
   // Crawlers request /robots.txt at the host root. The file itself is under the mount.
   { source: "/robots.txt", destination: "/login/robots.txt", permanent: false, basePath: false },
+  // Next emits <link rel="apple-touch-icon" href="/apple-icon"> without the mount
+  // (favicon and the manifest include it), so the root URL 404s.
+  {
+    source: "/apple-icon",
+    destination: publicPath("/apple-icon"),
+    permanent: false,
+    basePath: false,
+  },
 ] as const;

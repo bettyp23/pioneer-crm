@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { publicPath } from "@/lib/mount";
 
 import { NAV_ITEMS } from "./nav-items";
 
@@ -34,9 +35,14 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md text-xs font-bold">
-                  P
-                </span>
+                {/* eslint-disable-next-line @next/next/no-img-element -- next/image does not add basePath */}
+                <img
+                  src={publicPath("/brand/pioneer-p-mark.png")}
+                  alt=""
+                  width={32}
+                  height={23}
+                  className="size-8 object-contain"
+                />
                 <span className="flex flex-col leading-tight">
                   <span className="font-semibold">Pioneer OS</span>
                   <span className="text-muted-foreground truncate text-xs">{workspaceName}</span>
