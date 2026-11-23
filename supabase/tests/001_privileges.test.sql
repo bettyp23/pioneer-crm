@@ -82,6 +82,8 @@ select set_eq(
             ('ai_usage', 'SELECT'),
             ('ai_spend_this_month', 'SELECT'),
             ('job_attempts', 'SELECT'),
+            ('agent_deliveries', 'SELECT'),
+            ('chat_threads', 'SELECT'),
             ('connection_brakes', 'SELECT'),
             ('result_rows', 'SELECT'),
             ('messages', 'SELECT') $$,

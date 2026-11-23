@@ -105,6 +105,7 @@ Proven by `supabase/tests/012_client_portal.test.sql` and `tests/e2e/portal.spec
 |---|---|---|
 | Supabase publishable key, URL | Vercel env, `NEXT_PUBLIC_*` | — (public by design; RLS protects data) |
 | Supabase secret (service-role) key | Owner's password manager; local `.env.local` when running `bootstrap-owner`; the VPS app's `.env` (server-only, `chmod 600`) as `SUPABASE_SECRET_KEY` once client invites go live (D-39; owner approved 2026-11-22) — used only by `src/server/auth/portal-invites.ts` for `inviteUserByEmail`, import-restricted by ESLint | `NEXT_PUBLIC_*`, repo, logs, AI tools, browser |
+| Agent chat: `GROK_MICHAEL_WEBHOOK_URL`/`_KEY`, `PIONEER_AGENT_REPLY_KEY`, `HERMES_API_KEY` | VPS app `.env` (chmod 600), typed by the owner; used only in `src/server/agents/**` (webhook out, reply check in constant time, Hermes on the private network). See docs/runbooks/agent-chat.md | Repo, logs, chat, browser, `NEXT_PUBLIC_*` |
 | `CRON_SECRET` (M5) | Vercel env (production, staging separately) | Repo |
 | DB password | Password manager; CI secret for staging migrations | Repo, chat tools |
 

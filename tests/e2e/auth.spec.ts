@@ -59,7 +59,7 @@ test("password + TOTP signs in to the dashboard, then sign-out ends the session"
 }) => {
   await signInFully(page, USERS.owner.email);
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Michael Scott" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hermes" })).toBeVisible();
 
   await page.getByRole("button", { name: "Account menu" }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();

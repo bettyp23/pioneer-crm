@@ -19,6 +19,14 @@ env:
   NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
   NEXT_TELEMETRY_DISABLED: "1"
+  # Agent chat e2e (tests/e2e/agent-chat.spec.ts): local stand-ins for Grok and Hermes, made-up
+  # keys used only by these tests.
+  GROK_MICHAEL_WEBHOOK_URL: http://127.0.0.1:54410/hook
+  GROK_MICHAEL_WEBHOOK_KEY: test-webhook-key-not-a-secret
+  PIONEER_AGENT_REPLY_KEY: test-agent-reply-key-not-a-secret-000000
+  PIONEER_AGENT_REPLY_URL: http://localhost:3000/login/api/agent-reply
+  HERMES_API_URL: http://127.0.0.1:54411
+  HERMES_API_KEY: test-hermes-key-not-a-secret
 
 jobs:
   ci:

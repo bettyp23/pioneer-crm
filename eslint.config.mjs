@@ -14,6 +14,11 @@ const portalInvitesPattern = {
   group: ["@/server/auth/portal-invites", "**/server/auth/portal-invites"],
   message: "The invite helper (secret key) may only be imported from client-admin Server Actions.",
 };
+const agentStorePattern = {
+  group: ["@/server/agents/store", "**/server/agents/store", "./store"],
+  allowTypeImports: true,
+  message: "The agent store (secret key) may only be imported inside src/server/agents/.",
+};
 const serverDbPattern = {
   group: ["@/server/db/*", "**/server/db/*"],
   allowTypeImports: true,
@@ -28,12 +33,23 @@ const eslintConfig = defineConfig([
     rules: {
       "no-restricted-imports": [
         "error",
-        { patterns: [adminClientPattern, serverDbPattern, portalInvitesPattern] },
+        {
+          patterns: [adminClientPattern, serverDbPattern, portalInvitesPattern, agentStorePattern],
+        },
       ],
     },
   },
   {
     files: ["src/server/**/*.ts", "src/features/*/server/**/*.ts", "src/proxy.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: [adminClientPattern, portalInvitesPattern, agentStorePattern] },
+      ],
+    },
+  },
+  {
+    files: ["src/server/agents/**/*.ts"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [adminClientPattern, portalInvitesPattern] }],
     },
