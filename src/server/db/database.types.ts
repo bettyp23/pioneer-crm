@@ -336,6 +336,62 @@ export type Database = {
           },
         ];
       };
+      approval_responses: {
+        Row: {
+          approval_id: string;
+          client_id: string;
+          comment: string | null;
+          created_at: string;
+          decision: Database["public"]["Enums"]["approval_status"];
+          id: string;
+          responded_by: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval_id: string;
+          client_id: string;
+          comment?: string | null;
+          created_at?: string;
+          decision: Database["public"]["Enums"]["approval_status"];
+          id?: string;
+          responded_by?: string;
+          workspace_id: string;
+        };
+        Update: {
+          approval_id?: string;
+          client_id?: string;
+          comment?: string | null;
+          created_at?: string;
+          decision?: Database["public"]["Enums"]["approval_status"];
+          id?: string;
+          responded_by?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "approval_responses_approval_id_fkey";
+            columns: ["approval_id"];
+            isOneToOne: true;
+            referencedRelation: "approvals";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "approval_responses_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "approval_responses_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       approvals: {
         Row: {
           approver_type: Database["public"]["Enums"]["approval_approver"];
@@ -344,7 +400,9 @@ export type Database = {
           created_at: string;
           decided_at: string | null;
           decided_by_user_id: string | null;
+          decided_in_portal: boolean;
           decision_note: string | null;
+          details: string | null;
           evidence_url: string | null;
           id: string;
           project_id: string;
@@ -365,7 +423,9 @@ export type Database = {
           created_at?: string;
           decided_at?: string | null;
           decided_by_user_id?: string | null;
+          decided_in_portal?: boolean;
           decision_note?: string | null;
+          details?: string | null;
           evidence_url?: string | null;
           id?: string;
           project_id: string;
@@ -385,7 +445,9 @@ export type Database = {
           created_at?: string;
           decided_at?: string | null;
           decided_by_user_id?: string | null;
+          decided_in_portal?: boolean;
           decision_note?: string | null;
+          details?: string | null;
           evidence_url?: string | null;
           id?: string;
           project_id?: string;
@@ -603,6 +665,64 @@ export type Database = {
           },
         ];
       };
+      client_files: {
+        Row: {
+          client_id: string;
+          content_type: string | null;
+          created_at: string;
+          file_name: string;
+          id: string;
+          project_id: string | null;
+          size_bytes: number | null;
+          storage_path: string;
+          title: string;
+          uploaded_by: string | null;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          client_id: string;
+          content_type?: string | null;
+          created_at?: string;
+          file_name: string;
+          id?: string;
+          project_id?: string | null;
+          size_bytes?: number | null;
+          storage_path: string;
+          title: string;
+          uploaded_by?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          client_id?: string;
+          content_type?: string | null;
+          created_at?: string;
+          file_name?: string;
+          id?: string;
+          project_id?: string | null;
+          size_bytes?: number | null;
+          storage_path?: string;
+          title?: string;
+          uploaded_by?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_files_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "client_files_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
+          },
+        ];
+      };
       client_input_requests: {
         Row: {
           blocks_task_id: string | null;
@@ -713,6 +833,67 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "input_templates";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      client_requests: {
+        Row: {
+          admin_reply: string | null;
+          body: string;
+          client_id: string;
+          created_at: string;
+          created_by: string;
+          id: string;
+          kind: Database["public"]["Enums"]["client_request_kind"];
+          project_id: string | null;
+          status: Database["public"]["Enums"]["client_request_status"];
+          subject: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          admin_reply?: string | null;
+          body: string;
+          client_id: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["client_request_kind"];
+          project_id?: string | null;
+          status?: Database["public"]["Enums"]["client_request_status"];
+          subject: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          admin_reply?: string | null;
+          body?: string;
+          client_id?: string;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["client_request_kind"];
+          project_id?: string | null;
+          status?: Database["public"]["Enums"]["client_request_status"];
+          subject?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_requests_client_fkey";
+            columns: ["workspace_id", "client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "client_requests_project_fkey";
+            columns: ["client_id", "project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["client_id", "id"];
           },
         ];
       };
@@ -1720,25 +1901,42 @@ export type Database = {
       };
       profiles: {
         Row: {
+          client_id: string | null;
           created_at: string;
           display_name: string;
+          email: string | null;
+          role: Database["public"]["Enums"]["account_role"];
           updated_at: string;
           user_id: string;
         };
         ComputedFields: never;
         Insert: {
+          client_id?: string | null;
           created_at?: string;
           display_name: string;
+          email?: string | null;
+          role?: Database["public"]["Enums"]["account_role"];
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          client_id?: string | null;
           created_at?: string;
           display_name?: string;
+          email?: string | null;
+          role?: Database["public"]["Enums"]["account_role"];
           updated_at?: string;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       project_tasks: {
         Row: {
@@ -1851,14 +2049,17 @@ export type Database = {
       };
       projects: {
         Row: {
-          blueprint_version_id: string;
+          blueprint_version_id: string | null;
           client_id: string;
           created_at: string;
+          current_phase: string | null;
           generated_by: string | null;
           id: string;
           idempotency_key: string;
+          launch_on: string | null;
           lead_id: string | null;
           name: string;
+          next_steps: string | null;
           no_sow_reason: string | null;
           sow_id: string | null;
           start_on: string;
@@ -1869,14 +2070,17 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
-          blueprint_version_id: string;
+          blueprint_version_id?: string | null;
           client_id: string;
           created_at?: string;
+          current_phase?: string | null;
           generated_by?: string | null;
           id?: string;
           idempotency_key: string;
+          launch_on?: string | null;
           lead_id?: string | null;
           name: string;
+          next_steps?: string | null;
           no_sow_reason?: string | null;
           sow_id?: string | null;
           start_on: string;
@@ -1886,14 +2090,17 @@ export type Database = {
           workspace_id: string;
         };
         Update: {
-          blueprint_version_id?: string;
+          blueprint_version_id?: string | null;
           client_id?: string;
           created_at?: string;
+          current_phase?: string | null;
           generated_by?: string | null;
           id?: string;
           idempotency_key?: string;
+          launch_on?: string | null;
           lead_id?: string | null;
           name?: string;
+          next_steps?: string | null;
           no_sow_reason?: string | null;
           sow_id?: string | null;
           start_on?: string;
@@ -2783,10 +2990,26 @@ export type Database = {
       };
     };
     Functions: {
+      add_project_task: {
+        Args: { p_due_on?: string; p_phase?: string; p_project_id: string; p_title: string };
+        Returns: string;
+      };
+      attach_portal_user: {
+        Args: { p_client_id: string; p_display_name: string; p_email?: string; p_user_id: string };
+        Returns: undefined;
+      };
       blueprint_version_problems: { Args: { p_version_id: string }; Returns: string[] };
       cancel_job: { Args: { p_id: string }; Returns: undefined };
+      create_client_approval: {
+        Args: { p_details?: string; p_project_id: string; p_title: string };
+        Returns: string;
+      };
       create_draft_version: {
         Args: { p_blueprint_id: string; p_from_version_id?: string };
+        Returns: string;
+      };
+      create_portal_project: {
+        Args: { p_client_id: string; p_launch_on?: string; p_name: string; p_start_on: string };
         Returns: string;
       };
       decide_action: {
@@ -2809,6 +3032,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      detach_portal_user: { Args: { p_user_id: string }; Returns: undefined };
       enqueue_job: {
         Args: {
           p_agent_id?: string;
@@ -2844,6 +3068,14 @@ export type Database = {
         Returns: number;
       };
       move_pipeline_stage: { Args: { direction: number; stage_id: string }; Returns: undefined };
+      portal_client: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          name: string;
+          timezone: string;
+        }[];
+      };
       publish_blueprint_version: {
         Args: { p_change_summary?: string; p_version_id: string };
         Returns: undefined;
@@ -2898,6 +3130,7 @@ export type Database = {
       };
     };
     Enums: {
+      account_role: "admin" | "client";
       action_status: "pending" | "approved" | "rejected" | "executed" | "cancelled";
       action_type:
         "send_email" | "deploy" | "price_quote" | "sign_contract" | "publish_content" | "other";
@@ -2911,6 +3144,8 @@ export type Database = {
       approval_subject: "task" | "deliverable" | "project_phase";
       blueprint_version_status: "draft" | "published" | "retired";
       client_kind: "organization" | "individual";
+      client_request_kind: "change" | "question";
+      client_request_status: "open" | "in_progress" | "done" | "declined";
       client_status: "prospect" | "active" | "paused" | "former";
       follow_up_status: "open" | "done" | "cancelled";
       input_kind: "file" | "text" | "access_confirmation" | "decision";
@@ -3042,6 +3277,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_role: ["admin", "client"],
       action_status: ["pending", "approved", "rejected", "executed", "cancelled"],
       action_type: [
         "send_email",
@@ -3060,6 +3296,8 @@ export const Constants = {
       approval_subject: ["task", "deliverable", "project_phase"],
       blueprint_version_status: ["draft", "published", "retired"],
       client_kind: ["organization", "individual"],
+      client_request_kind: ["change", "question"],
+      client_request_status: ["open", "in_progress", "done", "declined"],
       client_status: ["prospect", "active", "paused", "former"],
       follow_up_status: ["open", "done", "cancelled"],
       input_kind: ["file", "text", "access_confirmation", "decision"],

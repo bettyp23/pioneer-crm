@@ -20,6 +20,7 @@ const EXPECTED: Record<Permission, Role[]> = {
   "agents.dispatch": ["owner", "admin"],
   "agents.kill_switch": ["owner"],
   "jobs.manage": ["owner", "admin"],
+  "portal.invite": ["owner"],
 };
 
 describe("permission matrix", () => {

@@ -21,6 +21,8 @@ const PERMISSIONS = {
   "agents.dispatch": ["owner", "admin"],
   "agents.kill_switch": ["owner"],
   "jobs.manage": ["owner", "admin"],
+  // Client portal (D-39): invite clients and link or unlink their accounts.
+  "portal.invite": ["owner"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

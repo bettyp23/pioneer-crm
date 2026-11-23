@@ -7,6 +7,8 @@ export const APP_BASE_PATH = "/login";
 // Browser origin when the path proxy serves the app. Not a redirect target:
 // the upstream app must not send visitors here (that loops through the proxy).
 export const PUBLISHED_SITE_ORIGIN = "https://pioneerdigitalai.com";
+// The app's own host on the VPS (behind a reverse proxy that may terminate TLS).
+export const VPS_APP_ORIGIN = "https://os.pioneerdigitalai.com";
 
 export function publicPath(appPath: string): string {
   if (!appPath.startsWith("/")) throw new Error("App path must start with /");
@@ -18,17 +20,27 @@ export function isLoginMountPath(pathname: string): boolean {
   return pathname === APP_BASE_PATH || pathname.startsWith(`${APP_BASE_PATH}/`);
 }
 
-/** Pathname inside the app (Next proxy strips basePath). `/` is sign-in, not every path. */
+/**
+ * Pathname inside the app (Next proxy strips basePath). `/` is sign-in, not every path.
+ * `/welcome` is where an emailed invite link lands before any session exists.
+ */
 export function isPublicAppPath(pathname: string): boolean {
-  return pathname === "/" || pathname === "/mfa" || pathname.startsWith("/mfa/");
+  return (
+    pathname === "/" ||
+    pathname === "/mfa" ||
+    pathname.startsWith("/mfa/") ||
+    pathname === "/welcome" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password"
+  );
 }
 
 // Sign-out is a cookie-authenticated POST. Allow the host the browser is on,
-// plus the published site when a proxy presents a different Host to the app.
+// plus the published site and the VPS host when a proxy presents a different Host or scheme.
 // Missing Origin is rejected. No wildcard.
 export function isTrustedFormOrigin(origin: string | null, requestOrigin: string): boolean {
   if (!origin) return false;
-  return origin === requestOrigin || origin === PUBLISHED_SITE_ORIGIN;
+  return origin === requestOrigin || origin === PUBLISHED_SITE_ORIGIN || origin === VPS_APP_ORIGIN;
 }
 
 type CookieOptions = {

@@ -42,7 +42,10 @@ jobs:
         run: npm test
 
       - name: Start Supabase (applies migrations + seed)
-        run: npx supabase start -x studio,imgproxy,storage-api,realtime,edge-runtime,logflare,vector,supavisor
+        # storage-api stays on: the client portal's private file bucket (D-39).
+        run: npx supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor
+      - name: Local secret key for the app's invite helper (well-known local key, not a secret)
+        run: echo "SUPABASE_SECRET_KEY=$(npx supabase status -o json | jq -r .SECRET_KEY)" >> "$GITHUB_ENV"
       - name: Database lint
         run: npm run db:lint
       - name: Database tests (pgTAP)

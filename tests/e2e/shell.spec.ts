@@ -2,16 +2,17 @@ import { expect, test } from "@playwright/test";
 
 import { USERS } from "./fixtures";
 
-// Minimal shell (one tab), installable app, and security headers (A8, A9)
+// Minimal shell (Dashboard + Clients tabs), installable app, and security headers (A8, A9)
 
 test.describe("as owner", () => {
   test.use({ storageState: USERS.owner.storage });
 
-  test("sidebar has one tab: Dashboard", async ({ page }) => {
+  test("sidebar has two tabs: Dashboard and Clients", async ({ page }) => {
     await page.goto("/login/dashboard");
     const nav = page.locator("[data-sidebar=content]");
-    await expect(nav.getByRole("link")).toHaveCount(1);
+    await expect(nav.getByRole("link")).toHaveCount(2);
     await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Clients" })).toBeVisible();
     await page.screenshot({ path: "test-results/evidence/dashboard-owner.png", fullPage: true });
   });
 

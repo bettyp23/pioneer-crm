@@ -6,6 +6,8 @@
 --   viewer@example.test    viewer of "Demo Workspace", TOTP enrolled
 --   enroll@example.test    member of "Demo Workspace", no TOTP yet (exercises enrollment)
 --   outsider@example.test  no membership, TOTP enrolled
+--   clienta@example.test   client account for "Northwind Example Bakery", TOTP enrolled
+--   clientb@example.test   client account for "Contoso Example Dental", TOTP enrolled
 -- TOTP secret for enrolled users: tests/e2e/fixtures.ts (LOCAL_TOTP_SECRET).
 
 do $$
@@ -16,11 +18,13 @@ declare
 begin
   for u in
     select * from (values
-      ('00000000-0000-4000-8000-000000000001'::uuid, 'owner@example.test',    'Demo Owner',    true),
-      ('00000000-0000-4000-8000-000000000002'::uuid, 'viewer@example.test',   'Demo Viewer',   true),
-      ('00000000-0000-4000-8000-000000000003'::uuid, 'enroll@example.test',   'Demo Enrollee', false),
-      ('00000000-0000-4000-8000-000000000004'::uuid, 'outsider@example.test', 'Demo Outsider', true)
-    ) as t(id, email, display_name, has_totp)
+      ('00000000-0000-4000-8000-000000000001'::uuid, 'owner@example.test',    'Demo Owner',    true,  'admin'),
+      ('00000000-0000-4000-8000-000000000002'::uuid, 'viewer@example.test',   'Demo Viewer',   true,  'admin'),
+      ('00000000-0000-4000-8000-000000000003'::uuid, 'enroll@example.test',   'Demo Enrollee', false, 'admin'),
+      ('00000000-0000-4000-8000-000000000004'::uuid, 'outsider@example.test', 'Demo Outsider', true,  'client'),
+      ('00000000-0000-4000-8000-000000000005'::uuid, 'clienta@example.test',  'Avery Example', true,  'client'),
+      ('00000000-0000-4000-8000-000000000006'::uuid, 'clientb@example.test',  'Jordan Example', true, 'client')
+    ) as t(id, email, display_name, has_totp, account_role)
   loop
     insert into auth.users (
       instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -44,7 +48,8 @@ begin
       values (gen_random_uuid(), u.id, 'Seeded authenticator', 'totp', 'verified', now(), now(), totp_secret);
     end if;
 
-    insert into public.profiles (user_id, display_name) values (u.id, u.display_name);
+    insert into public.profiles (user_id, display_name, role, email)
+    values (u.id, u.display_name, u.account_role::public.account_role, u.email);
   end loop;
 end;
 $$;
@@ -289,3 +294,46 @@ insert into public.messages (workspace_id, author, author_user_id, recipient, ki
   ('10000000-0000-4000-8000-000000000001', 'pioneer', null, null, 'answer',
    'Synthetic example: the discovery follow-up email is waiting for your approval, and the sitemap needs the client''s sign-off.',
    now() - interval '3 hours' + interval '2 minutes');
+
+-- ── Client portal demo (synthetic; local only) ─────────────────────────────
+-- Client A = Northwind (has the generated project), client B = Contoso (simple project).
+-- File rows point at objects the e2e tests upload; the bytes are not seeded.
+do $$
+declare
+  ws uuid := '10000000-0000-4000-8000-000000000001';
+  owner_id uuid := '00000000-0000-4000-8000-000000000001';
+  ca uuid; cb uuid; pa uuid; pb uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', owner_id, 'role', 'authenticated', 'aal', 'aal2')::text, true);
+  select id into ca from public.clients where workspace_id = ws and name = 'Northwind Example Bakery';
+  select id into cb from public.clients where workspace_id = ws and name = 'Contoso Example Dental';
+
+  perform public.attach_portal_user('00000000-0000-4000-8000-000000000005', ca, 'Avery Example', 'clienta@example.test');
+  perform public.attach_portal_user('00000000-0000-4000-8000-000000000006', cb, 'Jordan Example', 'clientb@example.test');
+
+  select id into pa from public.projects where client_id = ca order by created_at limit 1;
+  update public.projects set current_phase = 'Design',
+    next_steps = 'We are drafting the home page. You will get a preview to approve next week.',
+    launch_on = current_date + 45
+    where id = pa;
+  pb := public.create_portal_project(cb, 'Contoso intake forms', current_date - 10, null);
+  update public.projects set current_phase = 'Planning',
+    next_steps = 'Send us your current paper intake form.'
+    where id = pb;
+  perform public.add_project_task(pb, 'Collect current intake form', 'Planning', current_date + 3);
+
+  perform public.create_client_approval(pa, 'Home page design', 'Please review the home page mockup we emailed.');
+  perform public.create_client_approval(pb, 'Intake form questions', 'Are these the questions you want patients to answer?');
+
+  insert into public.client_requests (client_id, project_id, kind, subject, body)
+  values (ca, pa, 'question', 'Can we add a gift card page?', 'Synthetic request from Northwind.'),
+         (cb, pb, 'change', 'Add a Spanish version', 'Synthetic request from Contoso.');
+
+  insert into public.client_files (client_id, project_id, title, storage_path, file_name, content_type, size_bytes)
+  values (ca, pa, 'Northwind brand guide', ca::text || '/seed/northwind-brand-guide.txt', 'northwind-brand-guide.txt', 'text/plain', 32),
+         (cb, pb, 'Contoso intake draft', cb::text || '/seed/contoso-intake-draft.txt', 'contoso-intake-draft.txt', 'text/plain', 32);
+
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;

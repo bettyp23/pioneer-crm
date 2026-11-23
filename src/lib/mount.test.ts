@@ -8,6 +8,7 @@ import {
   isTrustedFormOrigin,
   legacyMountRedirects,
   PUBLISHED_SITE_ORIGIN,
+  VPS_APP_ORIGIN,
   publicPath,
   scopedAuthCookie,
 } from "@/lib/mount";
@@ -44,12 +45,21 @@ describe("login mount paths", () => {
     expect(isPublicAppPath("/dashboard")).toBe(false);
     expect(isPublicAppPath("/no-access")).toBe(false);
     expect(isPublicAppPath("/settings/workspace")).toBe(false);
+    expect(isPublicAppPath("/welcome")).toBe(true);
+    expect(isPublicAppPath("/welcome/x")).toBe(false);
+    expect(isPublicAppPath("/forgot-password")).toBe(true);
+    expect(isPublicAppPath("/reset-password")).toBe(true);
+    expect(isPublicAppPath("/reset-password/x")).toBe(false);
+    expect(isPublicAppPath("/portal")).toBe(false);
+    expect(isPublicAppPath("/portal/files")).toBe(false);
   });
 });
 
 describe("form origin allowlist", () => {
   it("accepts the request host and the published site only", () => {
     expect(isTrustedFormOrigin("http://localhost:3000", "http://localhost:3000")).toBe(true);
+    expect(isTrustedFormOrigin(VPS_APP_ORIGIN, "http://127.0.0.1:3000")).toBe(true);
+    expect(isTrustedFormOrigin("https://evil.example", VPS_APP_ORIGIN)).toBe(false);
     expect(isTrustedFormOrigin(PUBLISHED_SITE_ORIGIN, "https://pioneer-crm-two.vercel.app")).toBe(
       true,
     );

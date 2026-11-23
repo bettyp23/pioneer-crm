@@ -248,10 +248,17 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Client portal invites land on /login/welcome (src/app/(auth)/welcome). The hosted project
+# needs the same template pasted in Auth → Email Templates → Invite user.
+[auth.email.template.invite]
+subject = "Your Pioneer Digital AI client portal"
+content_path = "./supabase/templates/invite.html"
+
+# "Forgot your password?" links land on /login/reset-password (src/app/(auth)/reset-password).
+# The hosted project needs the same template pasted in Auth → Email Templates → Reset password.
+[auth.email.template.recovery]
+subject = "Reset your Pioneer Digital AI password"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
@@ -305,7 +312,8 @@ max_enrolled_factors = 3
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-# Pioneer OS: TOTP is required for all users (D-1); enforced in RLS via aal2.
+# Pioneer OS: TOTP is required for staff (D-1) and optional for client accounts (D-39);
+# enforced in RLS via private.is_mfa().
 enroll_enabled = true
 verify_enabled = true
 
