@@ -34,8 +34,11 @@ publishing it.
 Unchanged from the Hostinger setup except:
 
 - `SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY}` in `environment:` (client invites, D-39).
-- **No `ports:`** (pending approval, 2026-11-23): Traefik reaches the app on the internal network;
-  a published port exposed the sign-in page over plain HTTP at `http://2.25.104.128:<port>`.
+- **No `ports:`** (removed 2026-11-23 with the owner's approval): Traefik reaches the app on the
+  internal network. The published port had exposed the sign-in page over plain HTTP at
+  `http://2.25.104.128:<port>`. Hermes's published port (4860) was removed the same day for the
+  same reason; its dashboard stays reachable through its HTTPS route and login. After the change,
+  the server listens publicly only on 22, 80 (redirects to HTTPS) and 443.
 
 Deploy = `cd /docker/pioneer-crm && docker compose up -d --force-recreate pioneer-crm` (rebuilds
 from `main`; about 3–5 minutes of downtime). Backups of the compose file sit next to it as
