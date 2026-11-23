@@ -63,7 +63,9 @@ Status legend: **OPEN** (needs owner approval) · **PROPOSED** (default unless y
 - No workspace switcher (single workspace).
 - Client portal (D-39, `feat/client-portal`): invite-only client accounts at `/login/portal`,
   managed at `/login/dashboard/clients`. See docs/security.md §3a and
-  docs/runbooks/client-portal.md. No client password reset yet (use the Supabase dashboard).
+  docs/runbooks/client-portal.md. Authenticator apps are optional for clients (required for
+  admins); clients reset their own passwords by email. Goes live on the VPS
+  (os.pioneerdigitalai.com).
 - No in-app MFA factor reset or password change yet; recovery via the Supabase dashboard
   (docs/runbooks/bootstrap-owner.md).
 - Users with audit history cannot be deleted (audit rows are immutable and reference them);

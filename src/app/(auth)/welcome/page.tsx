@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AcceptInviteForm } from "@/features/auth/components/accept-invite-form";
+import { SetPasswordForm } from "@/features/auth/components/set-password-form";
 
 export const metadata: Metadata = { title: "Set up your account" };
 
@@ -20,12 +20,12 @@ export default async function WelcomePage(props: PageProps<"/welcome">) {
         </CardTitle>
         <CardDescription>
           {valid
-            ? "Choose a password. Next you'll connect an authenticator app, which keeps your project information private."
+            ? "Choose a password to finish setting up your account."
             : "This link isn't complete. Open the invite email again and use its button, or ask Pioneer Digital AI to send a new invite."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {valid ? <AcceptInviteForm tokenHash={tokenHash} /> : null}
+        {valid ? <SetPasswordForm tokenHash={tokenHash} purpose="invite" /> : null}
         <Link href="/" className="text-muted-foreground self-center text-sm underline">
           Already set up? Sign in
         </Link>

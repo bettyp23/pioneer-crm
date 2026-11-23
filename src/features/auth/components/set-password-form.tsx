@@ -9,26 +9,41 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-  acceptInviteSchema,
   MIN_PASSWORD_LENGTH,
-  type AcceptInviteInput,
+  setPasswordSchema,
+  type SetPasswordInput,
 } from "@/features/auth/schemas";
-import { acceptInvite } from "@/features/auth/server/actions";
+import { acceptInvite, resetPassword } from "@/features/auth/server/actions";
 
-export function AcceptInviteForm({ tokenHash }: { tokenHash: string }) {
+// Sets a new password from an emailed link: an invite (new account) or a password reset.
+export function SetPasswordForm({
+  tokenHash,
+  purpose,
+}: {
+  tokenHash: string;
+  purpose: "invite" | "recovery";
+}) {
   const [serverError, setServerError] = useState<string | null>(null);
+  // Reset of an account with an authenticator: the link is used up; the code comes next.
+  const [needsCode, setNeedsCode] = useState(false);
   const [pending, startTransition] = useTransition();
-  const form = useForm<AcceptInviteInput>({
-    resolver: zodResolver(acceptInviteSchema),
-    defaultValues: { tokenHash, password: "", confirm: "" },
+  const form = useForm<SetPasswordInput>({
+    resolver: zodResolver(setPasswordSchema),
+    defaultValues: { tokenHash, code: undefined, password: "", confirm: "" },
   });
   const { errors } = form.formState;
 
   const onSubmit = form.handleSubmit((values) => {
     setServerError(null);
     startTransition(async () => {
-      const result = await acceptInvite(values);
-      if (result && !result.ok) setServerError(result.error);
+      const input = needsCode
+        ? { ...values, tokenHash: undefined }
+        : { ...values, code: undefined };
+      const result = await (purpose === "invite" ? acceptInvite : resetPassword)(input);
+      if (result && !result.ok) {
+        setServerError(result.error);
+        if (result.needsCode) setNeedsCode(true);
+      }
     });
   });
 
@@ -41,8 +56,25 @@ export function AcceptInviteForm({ tokenHash }: { tokenHash: string }) {
           </Alert>
         ) : null}
         <input type="hidden" {...form.register("tokenHash")} />
+        {needsCode ? (
+          <Field data-invalid={!!errors.code}>
+            <FieldLabel htmlFor="totp-code">Authenticator code</FieldLabel>
+            <Input
+              id="totp-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              autoFocus
+              aria-invalid={!!errors.code}
+              {...form.register("code")}
+            />
+            <FieldError errors={[errors.code]} />
+          </Field>
+        ) : null}
         <Field data-invalid={!!errors.password}>
-          <FieldLabel htmlFor="new-password">Choose a password</FieldLabel>
+          <FieldLabel htmlFor="new-password">
+            {purpose === "invite" ? "Choose a password" : "New password"}
+          </FieldLabel>
           <Input
             id="new-password"
             type="password"

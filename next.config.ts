@@ -23,8 +23,9 @@ const nextConfig: NextConfig = {
   basePath: "/login",
   experimental: {
     serverActions: {
-      // Browser origin when a proxy forwards Host as the vercel.app upstream.
-      allowedOrigins: ["pioneerdigitalai.com"],
+      // Browser origins when a reverse proxy forwards a different Host to the app:
+      // the VPS (os.pioneerdigitalai.com) and the earlier path proxy on pioneerdigitalai.com.
+      allowedOrigins: ["os.pioneerdigitalai.com", "pioneerdigitalai.com"],
     },
   },
   async redirects() {

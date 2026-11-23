@@ -87,7 +87,8 @@ export async function requireRole(permission: Permission) {
 
 export type PortalClient = { id: string; name: string; timezone: string };
 
-// The signed-in client account's own client record (RLS + MFA in the database), or null.
+// The signed-in client account's own client record, or null (staff, unlinked accounts, or a
+// client with an authenticator who hasn't entered the code yet; enforced in the database).
 export const getPortalClient = cache(async (): Promise<PortalClient | null> => {
   const supabase = await getSupabase();
   const { data, error } = await supabase.rpc("portal_client").maybeSingle();
@@ -102,13 +103,28 @@ export type CurrentClientUser = {
   client: PortalClient;
 };
 
-// Signed in with password + TOTP as a client account linked to a client record.
-// Staff go to their dashboard; anyone else to /no-access. Call from every portal page,
-// query, Route Handler and Server Action. The database enforces the same rules (RLS).
+// True when the signed-in account has a verified authenticator app. listFactors() reads the
+// user from the Auth server (not the unverified cookie).
+export const hasAuthenticator = cache(async (): Promise<boolean> => {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) throw new Error(`Failed to load MFA factors (${error.code})`);
+  return data.totp.length > 0;
+});
+
+// Signed in as a client account linked to a client record. Authenticator apps are optional
+// for clients (D-39): a password-only session is enough until the client adds one, then the
+// code is required. Staff go to their dashboard (which always requires the code); anyone
+// else to /no-access. Call from every portal page, query, Route Handler and Server Action.
+// The database enforces the same rules (RLS, private.is_mfa()).
 export const requireClient = cache(async () => {
   const claims = await getClaims();
   if (!claims) redirect("/");
-  if (claims.aal !== "aal2") redirect("/mfa");
+  if (claims.aal !== "aal2") {
+    if (await hasAuthenticator()) redirect("/mfa");
+    // Without the code, only a client account can continue; admins must set one up.
+    if (!(await getPortalClient())) redirect("/mfa");
+  }
 
   const supabase = await getSupabase();
   const { data: profile, error } = await supabase
@@ -135,4 +151,13 @@ export const requireClient = cache(async () => {
 // the dashboard (which sends anyone without a membership to /no-access).
 export async function homePath(): Promise<"/portal" | "/dashboard"> {
   return (await getPortalClient()) ? "/portal" : "/dashboard";
+}
+
+// Where to go right after a password is accepted (sign-in, invite, password reset): a client
+// without an authenticator goes straight to the portal; everyone else to /mfa for the code
+// (or to set one up). Call after the session exists; nothing earlier in the request may have
+// read the cached session helpers.
+export async function afterPasswordPath(): Promise<"/portal" | "/mfa"> {
+  if (await hasAuthenticator()) return "/mfa";
+  return (await getPortalClient()) ? "/portal" : "/mfa";
 }

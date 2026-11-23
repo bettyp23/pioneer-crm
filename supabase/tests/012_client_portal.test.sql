@@ -2,7 +2,7 @@
 -- Client A must never see or change client B's data, through tables, functions or storage.
 begin;
 \ir helpers/fixtures.psql
-select plan(50);
+select plan(55);
 
 create temp table ids (name text primary key, id uuid) on commit drop;
 grant all on ids to authenticated;
@@ -246,8 +246,40 @@ select results_eq($$ select id from public.approvals $$, $$ values (pg_temp.id('
 
 -- ── MFA, unlinked accounts, staff boundary ──────────────────────────────────────
 reset role;
+-- Authenticator apps are optional for clients (D-39): password-only (aal1) is enough until
+-- the client adds one, and from then on the code is required. Admins always need it.
 select pg_temp.as_user('c0000000-0000-4000-8000-0000000000a1', 'aal1');
-select is((select count(*)::int from public.projects), 0, 'without MFA a client sees nothing');
+select results_eq($$ select id from public.projects $$, $$ values (pg_temp.id('pa')) $$,
+  'a client without an authenticator sees their own project with just a password');
+select results_eq($$ select id from public.portal_client() $$, $$ values (pg_temp.id('A')) $$,
+  'a client without an authenticator gets their portal with just a password');
+
+reset role;
+insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at)
+values (gen_random_uuid(), 'c0000000-0000-4000-8000-0000000000a1', 'Authenticator app', 'totp', 'verified', now(), now());
+select pg_temp.as_user('c0000000-0000-4000-8000-0000000000a1', 'aal1');
+select is(
+  (select count(*)::int from (
+    select 1 from public.projects union all select 1 from public.approvals
+    union all select 1 from public.client_files union all select 1 from public.client_requests
+    union all select 1 from public.portal_client()) s),
+  0, 'once a client adds an authenticator, a password-only session sees nothing'
+);
+select throws_ok(
+  $$ insert into public.client_requests (client_id, kind, subject, body)
+     values (pg_temp.id('A'), 'question', 'aal1 request', 'x') $$,
+  '42501', null, 'once a client adds an authenticator, a password-only session cannot write'
+);
+
+reset role;
+select pg_temp.as_user('c0000000-0000-4000-8000-0000000000a1');
+select results_eq($$ select id from public.projects $$, $$ values (pg_temp.id('pa')) $$,
+  'with the authenticator code the client sees their project again');
+
+reset role;
+select pg_temp.as_user('b0000000-0000-4000-8000-0000000000a1', 'aal1'); -- owner, password only
+select is((select count(*)::int from public.projects), 0,
+  'an admin always needs the authenticator code (password-only sees nothing)');
 
 reset role;
 select pg_temp.as_user('c0000000-0000-4000-8000-0000000000c1');

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoginForm } from "@/features/auth/components/login-form";
-import { getClaims, homePath } from "@/server/auth/session";
+import { afterPasswordPath, getClaims, homePath } from "@/server/auth/session";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Sign in" };
 export default async function LoginPage() {
   const claims = await getClaims();
   if (claims?.aal === "aal2") redirect(await homePath());
-  if (claims) redirect("/mfa");
+  if (claims) redirect(await afterPasswordPath());
 
   return (
     <Card>
@@ -23,6 +24,12 @@ export default async function LoginPage() {
       </CardHeader>
       <CardContent>
         <LoginForm />
+        <Link
+          href="/forgot-password"
+          className="text-muted-foreground mt-4 block text-center text-sm underline"
+        >
+          Forgot your password?
+        </Link>
       </CardContent>
     </Card>
   );

@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/portal/approvals", label: "Approvals" },
   { href: "/portal/files", label: "Files" },
   { href: "/portal/requests", label: "Requests" },
+  { href: "/portal/account", label: "Account" },
 ] as const;
 
 export function PortalNav({ pendingApprovals }: { pendingApprovals: number }) {

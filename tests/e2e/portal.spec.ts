@@ -120,6 +120,31 @@ test.beforeAll(async () => {
   }
 });
 
+// The newest link to `path` emailed to `to`, read from the local mail catcher (Mailpit).
+async function emailedLink(to: string, path: string): Promise<string> {
+  let link = "";
+  const pattern = new RegExp(`href="([^"]*${path.replaceAll("/", "\\/")}[^"]*)"`);
+  await expect
+    .poll(async () => {
+      const search = await fetch(
+        `http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`,
+      ).then((r) => r.json() as Promise<{ messages: { ID: string }[] }>);
+      for (const { ID } of search.messages) {
+        const message = await fetch(`http://127.0.0.1:54324/api/v1/message/${ID}`).then(
+          (r) => r.json() as Promise<{ HTML: string }>,
+        );
+        const match = pattern.exec(message.HTML)?.[1];
+        if (match) {
+          link = match.replaceAll("&amp;", "&");
+          return link;
+        }
+      }
+      return "";
+    })
+    .toContain("token_hash=");
+  return link;
+}
+
 // ── Signed out ─────────────────────────────────────────────────────────────────
 test("signed-out visitors are sent to /login from every portal and dashboard page", async ({
   page,
@@ -130,6 +155,7 @@ test("signed-out visitors are sent to /login from every portal and dashboard pag
     "/login/portal/approvals",
     "/login/portal/files",
     "/login/portal/requests",
+    "/login/portal/account",
     `/login/portal/files/${someId}`,
     "/login/dashboard",
     "/login/dashboard/clients",
@@ -374,7 +400,7 @@ test.describe("client A calling Supabase directly", () => {
     expect(state.rows[0].phase).not.toBe("Hijacked");
   });
 
-  test("without the authenticator step sees nothing", async ({ page }) => {
+  test("with an authenticator but without its code sees nothing", async ({ page }) => {
     const supabase = await signInAsClientA(page, false);
     for (const table of ["projects", "approvals", "client_files", "client_requests"] as const) {
       const rows = await supabase.from(table).select("id");
@@ -402,11 +428,13 @@ test.describe("owner manages clients", () => {
     await expect(page.getByText("Request updated.")).toBeVisible();
   });
 
-  test("invites a client, who sets a password and authenticator and sees only their client", async ({
+  test("invites a client, who can skip the authenticator, add it later and reset their password", async ({
     page,
     browser,
   }) => {
     const email = `invitee-${RUN}@example.test`;
+    const firstPassword = "a-long-portal-password-1";
+    const newPassword = "a-new-portal-password-3";
     await gotoHydrated(page, `/login/dashboard/clients/${A.clientId}`);
     await page.getByLabel("Name").fill("Invited Example");
     await page.getByLabel("Email").fill(email);
@@ -414,50 +442,142 @@ test.describe("owner manages clients", () => {
     await expect(page.getByText("Invite sent.")).toBeVisible();
     await expect(page.getByText(email)).toBeVisible();
 
-    // Read the invite from the local mail catcher (Mailpit).
-    let link = "";
-    await expect
-      .poll(async () => {
-        const search = await fetch(
-          `http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
-        ).then((r) => r.json() as Promise<{ messages: { ID: string }[] }>);
-        const id = search.messages[0]?.ID;
-        if (!id) return "";
-        const message = await fetch(`http://127.0.0.1:54324/api/v1/message/${id}`).then(
-          (r) => r.json() as Promise<{ HTML: string }>,
-        );
-        link = (/href="([^"]*\/login\/welcome[^"]*)"/.exec(message.HTML)?.[1] ?? "").replaceAll(
-          "&amp;",
-          "&",
-        );
-        return link;
-      })
-      .toContain("token_hash=");
+    const link = await emailedLink(email, "/login/welcome");
 
     const context = await browser.newContext();
     const invitee = await context.newPage();
+    const signIn = async (password: string) => {
+      await gotoHydrated(invitee, "/login");
+      await invitee.getByLabel("Email").fill(email);
+      await invitee.getByLabel("Password").fill(password);
+      await invitee.getByRole("button", { name: "Sign in" }).click();
+    };
+    const signOut = async () => {
+      await invitee.getByRole("button", { name: "Sign out" }).click();
+      await expect(invitee).toHaveURL(/\/login$/);
+    };
     try {
+      // 1. Accept the invite and skip the (optional) authenticator.
       await gotoHydrated(invitee, link);
       await expect(
         invitee.getByRole("heading", { name: "Welcome to your client portal" }),
       ).toBeVisible();
-      await invitee.getByLabel("Choose a password").fill("a-long-portal-password-1");
-      await invitee.getByLabel("Type it again").fill("a-long-portal-password-1");
+      await invitee.getByLabel("Choose a password").fill(firstPassword);
+      await invitee.getByLabel("Type it again").fill(firstPassword);
       await invitee.getByRole("button", { name: "Save password and continue" }).click();
       await expect(invitee).toHaveURL(/\/login\/mfa$/);
-      await invitee.getByRole("button", { name: "Set up authenticator app" }).click();
-      const secret = (await invitee.locator("code").first().textContent())?.trim() ?? "";
-      await enterTotp(invitee, await freshTotpCode(invitee, secret), "Confirm and continue");
+      await expect(
+        invitee.getByRole("heading", { name: "Add an authenticator app (optional)" }),
+      ).toBeVisible();
+      await invitee.getByRole("link", { name: "Skip for now" }).click();
       await expect(invitee).toHaveURL(/\/login\/portal$/);
       await expect(invitee.getByRole("heading", { name: A.projectName })).toBeVisible();
       await expect(invitee.getByText(B.projectName)).toHaveCount(0);
 
-      // The link works once.
+      // The invite link works once.
       await gotoHydrated(invitee, link);
       await invitee.getByLabel("Choose a password").fill("another-long-password-2");
       await invitee.getByLabel("Type it again").fill("another-long-password-2");
       await invitee.getByRole("button", { name: "Save password and continue" }).click();
       await expect(invitee.getByText(/expired or was already used/)).toBeVisible();
+
+      // 2. Password-only sign-in goes straight to the portal, still limited to client A,
+      //    and still kept out of the staff dashboard.
+      await gotoHydrated(invitee, "/login/portal");
+      await signOut();
+      await signIn(firstPassword);
+      await expect(invitee).toHaveURL(/\/login\/portal$/);
+      await invitee.goto("/login/dashboard/clients");
+      await expect(invitee).not.toHaveURL(/\/dashboard/);
+
+      const direct = createClient(LOCAL_SUPABASE_URL, LOCAL_PUBLISHABLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { error: directError } = await direct.auth.signInWithPassword({
+        email,
+        password: firstPassword,
+      });
+      expect(directError).toBeNull();
+      const projects = await direct.from("projects").select("id, client_id");
+      expect(projects.data?.length ?? 0).toBeGreaterThan(0);
+      expect(projects.data?.every((p) => p.client_id === A.clientId)).toBe(true);
+      for (const table of ["approvals", "client_files", "client_requests"] as const) {
+        const rows = await direct.from(table).select("client_id");
+        expect(
+          rows.data?.every((r) => r.client_id === A.clientId),
+          table,
+        ).toBe(true);
+      }
+      const forged = await direct.from("client_requests").insert({
+        client_id: B.clientId,
+        kind: "question",
+        subject: `forged-${RUN}`,
+        body: "x",
+      } as never);
+      expect(forged.error).not.toBeNull();
+
+      // 3. Turn the authenticator on from Account; from then on the code is required.
+      await gotoHydrated(invitee, "/login/portal/account");
+      await expect(invitee.getByRole("heading", { name: "Authenticator app: off" })).toBeVisible();
+      await invitee.getByRole("link", { name: "Set up authenticator app" }).click();
+      await expect(invitee).toHaveURL(/\/login\/mfa$/);
+      await invitee.waitForLoadState("networkidle");
+      await invitee.getByRole("button", { name: "Set up authenticator app" }).click();
+      const secret = (await invitee.locator("code").first().textContent())?.trim() ?? "";
+      await enterTotp(invitee, await freshTotpCode(invitee, secret), "Confirm and continue");
+      await expect(invitee).toHaveURL(/\/login\/portal$/);
+
+      await signOut();
+      await signIn(firstPassword);
+      await expect(invitee).toHaveURL(/\/login\/mfa$/);
+      await expect(invitee.getByRole("heading", { name: "Two-step verification" })).toBeVisible();
+      await invitee.goto("/login/portal");
+      await expect(invitee).toHaveURL(/\/login\/mfa$/);
+      const { data: stillPasswordOnly } = await direct.from("projects").select("id");
+      expect(stillPasswordOnly ?? [], "old password-only session now sees nothing").toEqual([]);
+
+      // 4. Forgot password: emailed link, new password, then the authenticator code.
+      await invitee.getByRole("button", { name: "Use a different account" }).click();
+      await gotoHydrated(invitee, "/login");
+      await invitee.getByRole("link", { name: "Forgot your password?" }).click();
+      await expect(invitee).toHaveURL(/\/login\/forgot-password$/);
+      await invitee.waitForLoadState("networkidle");
+      await invitee.getByLabel("Email").fill(email);
+      await invitee.getByRole("button", { name: "Email me a reset link" }).click();
+      await expect(invitee.getByText(/If that email has an account/)).toBeVisible();
+
+      const resetLink = await emailedLink(email, "/login/reset-password");
+      await gotoHydrated(invitee, resetLink);
+      await invitee.getByLabel("New password").fill(newPassword);
+      await invitee.getByLabel("Type it again").fill(newPassword);
+      await invitee.getByRole("button", { name: "Save password and continue" }).click();
+      // The account has an authenticator, so the password only changes after its code.
+      await expect(invitee.getByText(/Now enter the 6-digit code/)).toBeVisible();
+      await invitee.getByLabel("Authenticator code").fill(await freshTotpCode(invitee, secret));
+      await invitee.getByRole("button", { name: "Save password and continue" }).click();
+      await expect(invitee).toHaveURL(/\/login\/portal$/);
+
+      // The reset link works once, and the old password no longer does.
+      await signOut();
+      await gotoHydrated(invitee, resetLink);
+      await invitee.getByLabel("New password").fill("yet-another-password-4");
+      await invitee.getByLabel("Type it again").fill("yet-another-password-4");
+      await invitee.getByRole("button", { name: "Save password and continue" }).click();
+      await expect(invitee.getByText(/expired or was already used/)).toBeVisible();
+      await signIn(firstPassword);
+      await expect(invitee.getByText(/Sign-in failed/)).toBeVisible();
+
+      // 5. Turn the authenticator off again: password-only sign-in returns to the portal.
+      await signIn(newPassword);
+      await expect(invitee).toHaveURL(/\/login\/mfa$/);
+      await enterTotp(invitee, await freshTotpCode(invitee, secret));
+      await expect(invitee).toHaveURL(/\/login\/portal$/);
+      await gotoHydrated(invitee, "/login/portal/account");
+      await invitee.getByRole("button", { name: "Turn off" }).click();
+      await expect(invitee.getByRole("heading", { name: "Authenticator app: off" })).toBeVisible();
+      await signOut();
+      await signIn(newPassword);
+      await expect(invitee).toHaveURL(/\/login\/portal$/);
     } finally {
       await context.close();
       const admin = adminClient();
@@ -466,9 +586,29 @@ test.describe("owner manages clients", () => {
       if (user) await admin.auth.admin.deleteUser(user.id);
     }
   });
+
+  test("an admin cannot skip the authenticator", async ({ page }) => {
+    await page.context().clearCookies();
+    await signInWithPassword(page, USERS.owner.email);
+    await expect(page.getByRole("heading", { name: "Two-step verification" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Skip for now" })).toHaveCount(0);
+    for (const path of ["/login/dashboard", "/login/dashboard/clients", "/login/portal"]) {
+      await page.goto(path);
+      await expect(page, path).toHaveURL(/\/login\/mfa$/);
+    }
+  });
 });
 
-test("a client account cannot sign in to staff pages before MFA either", async ({ page }) => {
+test("forgot-password gives the same answer for unknown emails", async ({ page }) => {
+  await gotoHydrated(page, "/login/forgot-password");
+  await page.getByLabel("Email").fill(`nobody-${RUN}@example.test`);
+  await page.getByRole("button", { name: "Email me a reset link" }).click();
+  await expect(page.getByText(/If that email has an account/)).toBeVisible();
+});
+
+test("a client who has an authenticator must enter its code before the portal or staff pages", async ({
+  page,
+}) => {
   await signInWithPassword(page, USERS.clientB.email);
   await page.goto("/login/portal");
   await expect(page).toHaveURL(/\/login\/mfa$/);

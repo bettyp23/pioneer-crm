@@ -71,7 +71,21 @@ be workspace members (trigger `workspace_members_admin_profile`), so staff right
 reach a client.
 
 A client account is linked to one client record (`profiles.client_id`, set only by the owner
-through `attach_portal_user`). Under the same restrictive MFA (aal2) policy as staff, it can:
+through `attach_portal_user`).
+
+**MFA for clients is optional (owner's decision, 2026-11-22).** Every restrictive
+`_require_mfa` policy calls `private.is_mfa()`, which passes for an aal2 session, or for a
+client account linked to a client record that has **no** verified authenticator. So:
+admins always need password + code; a client without an authenticator needs only the password;
+once a client adds one (portal → Account), the code is required for that account like anyone
+else's, and Supabase Auth also requires it before a password change (reset links ask for it).
+Clients can turn it off again only from a code-verified session.
+
+Clients reset forgotten passwords themselves (`/login/forgot-password` → emailed one-time
+link → `/login/reset-password`). The answer is the same whether or not the email has an
+account. Link tokens are verified on a button press, so email scanners can't use them up.
+
+Under that MFA rule, a client account can:
 
 | Table | Client can |
 |---|---|
@@ -90,7 +104,7 @@ Proven by `supabase/tests/012_client_portal.test.sql` and `tests/e2e/portal.spec
 | Secret | Where it lives | Never |
 |---|---|---|
 | Supabase publishable key, URL | Vercel env, `NEXT_PUBLIC_*` | — (public by design; RLS protects data) |
-| Supabase secret (service-role) key | Owner's password manager; local `.env.local` when running `bootstrap-owner`; Vercel **server-only** env `SUPABASE_SECRET_KEY` once client invites go live (D-39) — used only by `src/server/auth/portal-invites.ts` for `inviteUserByEmail`, import-restricted by ESLint | `NEXT_PUBLIC_*`, repo, logs, AI tools, browser |
+| Supabase secret (service-role) key | Owner's password manager; local `.env.local` when running `bootstrap-owner`; the VPS app's `.env` (server-only, `chmod 600`) as `SUPABASE_SECRET_KEY` once client invites go live (D-39; owner approved 2026-11-22) — used only by `src/server/auth/portal-invites.ts` for `inviteUserByEmail`, import-restricted by ESLint | `NEXT_PUBLIC_*`, repo, logs, AI tools, browser |
 | `CRON_SECRET` (M5) | Vercel env (production, staging separately) | Repo |
 | DB password | Password manager; CI secret for staging migrations | Repo, chat tools |
 

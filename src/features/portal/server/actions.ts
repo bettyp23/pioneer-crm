@@ -56,3 +56,21 @@ export async function submitRequest(formData: FormData): Promise<ActionResult> {
   revalidatePath("/portal", "layout");
   return { ok: true };
 }
+
+// Turns off the client's authenticator app (they're optional for clients, D-39). Requires the
+// code-verified session that requireClient() already insists on for accounts that have one.
+export async function removeAuthenticator(): Promise<ActionResult> {
+  const { supabase } = await requireClient();
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) return { ok: false, error: "Could not load your sign-in settings. Try again." };
+  for (const factor of data.all) {
+    if (factor.factor_type !== "totp") continue;
+    const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+    if (unenrollError) {
+      console.warn("portal.mfa_unenroll_failed", { code: unenrollError.code });
+      return { ok: false, error: "Could not turn it off. Try again." };
+    }
+  }
+  revalidatePath("/portal/account");
+  return { ok: true };
+}

@@ -8,7 +8,11 @@
 --     account 'admin' through the API (the column is not granted). Only workspace members
 --     may be 'admin', and only 'admin' accounts may be workspace members.
 --   * A client account sees rows whose client_id equals profiles.client_id, and nothing
---     else. Every policy below also sits behind the restrictive MFA (aal2) policy.
+--     else. Every policy below also sits behind the restrictive MFA policy.
+--   * MFA: admin accounts always need aal2 (password + authenticator code). A client account
+--     may choose to add an authenticator; until it does, its password session (aal1) is
+--     enough. Once it has a verified authenticator, it needs aal2 like everyone else.
+--     See private.is_mfa() below.
 --   * Clients may only INSERT requests and approval responses for their own client.
 --   * The clients table itself stays staff-only (it holds internal notes); the portal reads
 --     the client's name through public.portal_client().
@@ -92,6 +96,35 @@ as $$
   from public.profiles p
   where p.user_id = (select auth.uid()) and p.role = 'client';
 $$;
+
+-- MFA gate used by every restrictive "_require_mfa" policy (originally aal2 only, D-1).
+-- Owner's decision (D-39): authenticator apps are optional for client accounts and stay
+-- required for admins. So the gate also passes for a client account that is linked to a
+-- client record and has no verified authenticator. Admins, unlinked accounts and anyone
+-- with a verified authenticator still need aal2. Security definer: it reads profiles and
+-- auth.mfa_factors, which the caller cannot.
+create or replace function private.is_mfa()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce((select auth.jwt() ->> 'aal') = 'aal2', false)
+    or (
+      exists (
+        select 1 from public.profiles p
+        where p.user_id = (select auth.uid()) and p.role = 'client' and p.client_id is not null
+      )
+      and not exists (
+        select 1 from auth.mfa_factors f
+        where f.user_id = (select auth.uid()) and f.status = 'verified'
+      )
+    );
+$$;
+
+revoke all on function private.is_mfa() from public, anon;
+grant execute on function private.is_mfa() to authenticated;
 
 create function private.client_workspace_id(c uuid)
 returns uuid

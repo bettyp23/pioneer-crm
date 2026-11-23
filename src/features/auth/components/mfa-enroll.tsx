@@ -12,8 +12,9 @@ import {
 
 import { TotpCodeForm } from "./totp-code-form";
 
-// First sign-in: register an authenticator app (TOTP), then confirm with a first code.
-export function MfaEnroll() {
+// Register an authenticator app (TOTP), then confirm with a first code. Required for staff;
+// optional for client accounts (D-39), which see different wording.
+export function MfaEnroll({ optional = false }: { optional?: boolean }) {
   const [enrollment, setEnrollment] = useState<EnrollmentStart | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -26,8 +27,9 @@ export function MfaEnroll() {
     return (
       <div className="flex flex-col gap-4">
         <p className="text-muted-foreground text-sm">
-          Pioneer OS requires an authenticator app. You&apos;ll scan a QR code and enter a 6-digit
-          code to finish signing in.
+          {optional
+            ? "With an authenticator app, signing in also asks for a 6-digit code from your phone, so nobody can get in with just your password. You'll scan a QR code to set it up."
+            : "Pioneer OS requires an authenticator app. You'll scan a QR code and enter a 6-digit code to finish signing in."}
         </p>
         <Button onClick={begin} disabled={pending}>
           {pending ? "Preparing…" : "Set up authenticator app"}

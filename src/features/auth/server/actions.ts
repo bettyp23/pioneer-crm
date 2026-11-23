@@ -3,13 +3,16 @@
 import { redirect } from "next/navigation";
 
 import {
-  acceptInviteSchema,
+  forgotPasswordSchema,
+  setPasswordSchema,
   signInSchema,
   totpCodeSchema,
   verifyEnrollmentSchema,
   type ActionResult,
+  type MessageResult,
+  type SetPasswordResult,
 } from "@/features/auth/schemas";
-import { getClaims, getSupabase, homePath } from "@/server/auth/session";
+import { afterPasswordPath, getClaims, getSupabase, homePath } from "@/server/auth/session";
 
 // Server Actions are public HTTP endpoints: every input is re-validated here.
 // Error messages are deliberately generic (no account enumeration; docs/security.md §2).
@@ -27,7 +30,8 @@ export async function signIn(input: unknown): Promise<ActionResult> {
     console.warn("auth.sign_in_failed", { code: error.code, status: error.status });
     return { ok: false, error: SIGN_IN_FAILED };
   }
-  redirect("/mfa");
+  // Clients without an authenticator go straight to their portal (D-39); others to /mfa.
+  redirect(await afterPasswordPath());
 }
 
 export type EnrollmentStart =
@@ -95,40 +99,102 @@ export async function verifyTotp(input: unknown): Promise<ActionResult> {
   redirect(await homePath());
 }
 
-const INVITE_FAILED =
-  "This invite link has expired or was already used. Ask Pioneer Digital AI to send a new one.";
+const LINK_FAILED = {
+  invite:
+    "This invite link has expired or was already used. Ask Pioneer Digital AI to send a new one.",
+  recovery: "This reset link has expired or was already used. Ask for a new one below.",
+} as const;
+const CODE_NEEDED = "Now enter the 6-digit code from your authenticator app to save the password.";
 
-// Invite acceptance: the emailed link carries a one-time token. Verifying it here (on a button
-// press, not on page load) means email link scanners can't use it up. Then the new password is
-// set and the person continues to authenticator setup.
-export async function acceptInvite(input: unknown): Promise<ActionResult> {
-  const parsed = acceptInviteSchema.safeParse(input);
+// Emailed invite and password-reset links carry a one-time token. Verifying it here (on a
+// button press, not on page load) means email link scanners can't use it up. Then the new
+// password is saved. Supabase Auth only lets an account with an authenticator app change its
+// password after the app's code (aal2), so a reset for such an account takes a second submit
+// with the code; that submit relies on the session the first one created.
+async function setPasswordFromLink(
+  type: "invite" | "recovery",
+  input: unknown,
+): Promise<SetPasswordResult> {
+  const parsed = setPasswordSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the form and try again." };
   }
+  const { tokenHash, code, password } = parsed.data;
 
   const supabase = await getSupabase();
-  const { error: verifyError } = await supabase.auth.verifyOtp({
-    token_hash: parsed.data.tokenHash,
-    type: "invite",
-  });
-  if (verifyError) {
-    console.warn("auth.invite_verify_failed", { code: verifyError.code });
-    return { ok: false, error: INVITE_FAILED };
+  if (tokenHash) {
+    const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (verifyError) {
+      console.warn(`auth.${type}_verify_failed`, { code: verifyError.code });
+      return { ok: false, error: LINK_FAILED[type] };
+    }
+  } else if (type === "invite" || !code || !(await getClaims())) {
+    return { ok: false, error: LINK_FAILED[type] };
   }
 
-  const { error: passwordError } = await supabase.auth.updateUser({
-    password: parsed.data.password,
-  });
+  const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
+  if (listError) return { ok: false, error: "Could not save your password. Try again." };
+  const factor = factors.totp[0];
+  if (factor) {
+    if (!code) return { ok: false, error: CODE_NEEDED, needsCode: true };
+    const { error: mfaError } = await supabase.auth.mfa.challengeAndVerify({
+      factorId: factor.id,
+      code,
+    });
+    if (mfaError) {
+      console.warn("auth.mfa_verify_failed", { code: mfaError.code });
+      return { ok: false, error: CODE_FAILED, needsCode: true };
+    }
+  }
+
+  const { error: passwordError } = await supabase.auth.updateUser({ password });
   if (passwordError) {
-    console.warn("auth.invite_password_failed", { code: passwordError.code });
+    console.warn(`auth.${type}_password_failed`, { code: passwordError.code });
     return {
       ok: false,
+      needsCode: factor ? true : undefined,
       error:
         passwordError.code === "weak_password"
           ? "Choose a stronger password."
-          : "Could not save your password. Try again.",
+          : passwordError.code === "same_password"
+            ? "Choose a password you haven't used here before."
+            : "Could not save your password. Try again.",
     };
   }
+}
+
+// New client accounts: after the password, /mfa offers (for clients) or requires (for admins)
+// an authenticator app.
+export async function acceptInvite(input: unknown): Promise<SetPasswordResult> {
+  const failed = await setPasswordFromLink("invite", input);
+  if (failed) return failed;
   redirect("/mfa");
+}
+
+// Forgotten password, step 2: the emailed link's token plus the new password (and the
+// authenticator code, for accounts that have one).
+export async function resetPassword(input: unknown): Promise<SetPasswordResult> {
+  const failed = await setPasswordFromLink("recovery", input);
+  if (failed) return failed;
+  redirect(await afterPasswordPath());
+}
+
+const RESET_SENT =
+  "If that email has an account, we've sent a link to reset the password. It works once and expires in an hour.";
+
+// Forgotten password, step 1: email a reset link (supabase/templates/recovery.html). Always the
+// same answer, whether or not the account exists (no account enumeration).
+export async function requestPasswordReset(input: unknown): Promise<MessageResult> {
+  const parsed = forgotPasswordSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Enter a valid email address." };
+
+  const supabase = await getSupabase();
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email);
+  if (error) {
+    console.warn("auth.reset_request_failed", { code: error.code, status: error.status });
+    if (error.status === 429) {
+      return { ok: false, error: "Too many reset emails were sent. Wait a while and try again." };
+    }
+  }
+  return { ok: true, message: RESET_SENT };
 }
