@@ -81,6 +81,54 @@ export type Database = {
           },
         ];
       };
+      agent_deliveries: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          delivered_at: string | null;
+          last_error: string | null;
+          message_id: string;
+          sent_from: string;
+          status: string;
+          target: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+          last_error?: string | null;
+          message_id: string;
+          sent_from: string;
+          status?: string;
+          target: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          delivered_at?: string | null;
+          last_error?: string | null;
+          message_id?: string;
+          sent_from?: string;
+          status?: string;
+          target?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_deliveries_message_fkey";
+            columns: ["workspace_id", "message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["workspace_id", "id"];
+          },
+        ];
+      };
       agent_work_items: {
         Row: {
           agent_id: string;
@@ -658,6 +706,39 @@ export type Database = {
           },
           {
             foreignKeyName: "blueprints_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chat_threads: {
+        Row: {
+          agent: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          workspace_id: string;
+        };
+        Update: {
+          agent?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_threads_workspace_id_fkey";
             columns: ["workspace_id"];
             isOneToOne: false;
             referencedRelation: "workspaces";
@@ -1719,48 +1800,74 @@ export type Database = {
       };
       messages: {
         Row: {
+          agent_status: string | null;
           author: string;
           author_user_id: string | null;
           body: string;
           created_at: string;
           flagged: boolean;
           id: string;
+          in_reply_to: string | null;
           job_id: string | null;
           kind: string;
+          links: Json | null;
           recipient: string | null;
+          thread_id: string | null;
           workspace_id: string;
         };
         ComputedFields: never;
         Insert: {
+          agent_status?: string | null;
           author: string;
           author_user_id?: string | null;
           body: string;
           created_at?: string;
           flagged?: boolean;
           id?: string;
+          in_reply_to?: string | null;
           job_id?: string | null;
           kind?: string;
+          links?: Json | null;
           recipient?: string | null;
+          thread_id?: string | null;
           workspace_id: string;
         };
         Update: {
+          agent_status?: string | null;
           author?: string;
           author_user_id?: string | null;
           body?: string;
           created_at?: string;
           flagged?: boolean;
           id?: string;
+          in_reply_to?: string | null;
           job_id?: string | null;
           kind?: string;
+          links?: Json | null;
           recipient?: string | null;
+          thread_id?: string | null;
           workspace_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "messages_in_reply_to_fkey";
+            columns: ["workspace_id", "in_reply_to"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["workspace_id", "id"];
+          },
           {
             foreignKeyName: "messages_job_fkey";
             columns: ["workspace_id", "job_id"];
             isOneToOne: false;
             referencedRelation: "jobs";
+            referencedColumns: ["workspace_id", "id"];
+          },
+          {
+            foreignKeyName: "messages_thread_fkey";
+            columns: ["workspace_id", "thread_id"];
+            isOneToOne: false;
+            referencedRelation: "chat_threads";
             referencedColumns: ["workspace_id", "id"];
           },
           {
@@ -3000,6 +3107,7 @@ export type Database = {
       };
       blueprint_version_problems: { Args: { p_version_id: string }; Returns: string[] };
       cancel_job: { Args: { p_id: string }; Returns: undefined };
+      claim_agent_delivery: { Args: { p_message_id: string }; Returns: boolean };
       create_client_approval: {
         Args: { p_details?: string; p_project_id: string; p_title: string };
         Returns: string;
@@ -3046,6 +3154,10 @@ export type Database = {
         };
         Returns: string;
       };
+      finish_agent_delivery: {
+        Args: { p_attempts: number; p_delivered: boolean; p_error?: string; p_message_id: string };
+        Returns: undefined;
+      };
       generate_project: {
         Args: {
           p_blueprint_version_id: string;
@@ -3080,6 +3192,21 @@ export type Database = {
         Args: { p_change_summary?: string; p_version_id: string };
         Returns: undefined;
       };
+      record_agent_reply: {
+        Args: {
+          p_author: string;
+          p_body: string;
+          p_in_reply_to: string;
+          p_kind?: string;
+          p_links?: Json;
+          p_status: string;
+          p_thread_id: string;
+        };
+        Returns: {
+          duplicate: boolean;
+          message_id: string;
+        }[];
+      };
       request_approval: { Args: { p_task_id: string }; Returns: string };
       resume_connection: {
         Args: { p_connection: string; p_workspace_id: string };
@@ -3087,6 +3214,14 @@ export type Database = {
       };
       retire_blueprint_version: { Args: { p_version_id: string }; Returns: undefined };
       retry_job: { Args: { p_id: string }; Returns: undefined };
+      route_agent_message: { Args: { p_message_id: string; p_target: string }; Returns: boolean };
+      send_agent_message: {
+        Args: { p_agent: string; p_body: string; p_flagged?: boolean; p_workspace_id: string };
+        Returns: {
+          message_id: string;
+          thread_id: string;
+        }[];
+      };
       send_message: {
         Args: { p_body: string; p_flagged?: boolean; p_recipient?: string; p_workspace_id: string };
         Returns: string;

@@ -31,7 +31,9 @@ export function isPublicAppPath(pathname: string): boolean {
     pathname.startsWith("/mfa/") ||
     pathname === "/welcome" ||
     pathname === "/forgot-password" ||
-    pathname === "/reset-password"
+    pathname === "/reset-password" ||
+    // Agent replies authenticate with their own bearer key, not a session.
+    pathname === "/api/agent-reply"
   );
 }
 

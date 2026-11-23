@@ -50,6 +50,9 @@ describe("login mount paths", () => {
     expect(isPublicAppPath("/forgot-password")).toBe(true);
     expect(isPublicAppPath("/reset-password")).toBe(true);
     expect(isPublicAppPath("/reset-password/x")).toBe(false);
+    expect(isPublicAppPath("/api/agent-reply")).toBe(true);
+    expect(isPublicAppPath("/api/agent-reply/x")).toBe(false);
+    expect(isPublicAppPath("/api/chat/events")).toBe(false);
     expect(isPublicAppPath("/portal")).toBe(false);
     expect(isPublicAppPath("/portal/files")).toBe(false);
   });
