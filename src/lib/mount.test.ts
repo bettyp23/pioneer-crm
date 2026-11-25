@@ -126,5 +126,11 @@ describe("legacy redirects", () => {
     expect(legacyMountRedirects.map((redirect) => redirect.destination)).not.toContain(
       "/login/login",
     );
+    expect(legacyMountRedirects).toContainEqual({
+      source: "/apple-icon",
+      destination: "/login/apple-icon",
+      permanent: false,
+      basePath: false,
+    });
   });
 });

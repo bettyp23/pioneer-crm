@@ -36,6 +36,13 @@ test.describe("as owner", () => {
       expect(res.ok(), icon).toBe(true);
       expect(res.headers()["content-type"]).toContain("image/png");
     }
+    // The apple-touch-icon link is emitted at the host root (no /login prefix).
+    const appleRoot = await anon.request.get("/apple-icon");
+    expect(appleRoot.ok(), "/apple-icon").toBe(true);
+    expect(appleRoot.headers()["content-type"]).toContain("image/png");
+    const mark = await anon.request.get("/login/brand/pioneer-p-mark.png");
+    expect(mark.ok(), "brand mark").toBe(true);
+    expect(mark.headers()["content-type"]).toContain("image/png");
     expect((await anon.request.get("/login/app-icon/64")).status()).toBe(404);
     await anon.close();
   });
