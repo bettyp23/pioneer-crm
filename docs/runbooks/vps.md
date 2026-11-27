@@ -26,7 +26,7 @@ publishing it.
 |---|---|---|
 | `/docker/pioneer-crm/.env` | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (public), `SUPABASE_SECRET_KEY` (invites only) | `600 root` |
 | `/docker/pioneer-crm/.env.worker` | Worker settings (database login, Grok/Claude endpoints, sheet IDs) | `600 root` (read by Docker on the host, never mounted) |
-| `/docker/pioneer-crm/worker-files/` | `supabase-ca.crt` (public), `google-sheet-reader.json` (secret) | dir `700 root`; CA `644`; Google key `400`, owner uid 1000 (the container's `node` user) |
+| `/docker/pioneer-crm/worker-files/` | `supabase-ca.crt` (public), `google-sheet-reader.json` (secret) | dir `750 root:1000`; CA `644`; Google key `440 root:1000` (gid 1000 = the container's `node` group; unused on the host) |
 | `/root/.deploy-keys/` | Read-only GitHub deploy key + pinned `known_hosts` | dir `700`, key `600` |
 
 ## The app service
@@ -65,7 +65,7 @@ Add to `/docker/pioneer-crm/docker-compose.yml` under `services:` (and the `netw
     command: >-
       sh -c "apk add --no-cache git openssh-client su-exec &&
       if [ ! -d /app/src/.git ]; then git clone --depth 1 git@github.com:bettyp23/pioneer-crm.git /app/src;
-      else git -C /app/src fetch --depth 1 origin main && git -C /app/src reset --hard origin/main; fi &&
+      else git config --global --replace-all safe.directory /app/src && git -C /app/src fetch --depth 1 origin main && git -C /app/src reset --hard origin/main; fi &&
       cd /app/src && npm ci --include=dev && mkdir -p /tmp/pioneer-worker &&
       chown -R node:node /app/src /tmp/pioneer-worker &&
       exec su-exec node npx tsx worker/index.ts"
@@ -86,7 +86,8 @@ networks:
 What this gives:
 
 - **Non-root runtime.** Setup (packages, clone, `npm ci`) runs as root; the worker itself runs as
-  `node` (uid 1000) via `su-exec`.
+  `node` (uid 1000) via `su-exec`. The clone is then owned by `node`, so the restart path marks it
+  `safe.directory` before root runs `git fetch` (without that, git refuses and the restart fails).
 - **Own network** with outbound internet only. Not on the network the app shares with Hermes;
   no ports, no Traefik labels.
 - **Read-only secrets.** The deploy key and `worker-files` are mounted `:ro`; `.env.worker` is
